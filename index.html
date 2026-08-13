@@ -1,853 +1,155 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Market Visit Entry</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; max-width: 420px; margin: auto; background-size: cover; background-position: center; }
-    .bg-overlay { background: rgba(255,255,255,0.92); border-radius: 10px; padding: 15px; }
-    input, select, button, textarea { width: 100%; padding: 10px; margin: 8px 0; font-size: 16px; box-sizing: border-box; font-family: inherit; }
-    button { background: #4285f4; color: white; border: none; border-radius: 5px; cursor: pointer; }
-    button.secondary { background: #eee; color: #333; }
-    button:disabled { background: #ccc; cursor: not-allowed; }
-    #status, #loginStatus { margin-top: 10px; font-weight: bold; }
-    .logo-wrap { text-align: center; margin-bottom: 10px; }
-    .logo-wrap img { max-width: 140px; max-height: 90px; }
-    .company-name { text-align: center; font-size: 20px; font-weight: bold; color: #333; margin-bottom: 10px; display: none; }
-    .info-box { background: #f2f6ff; border-radius: 6px; padding: 10px; margin-bottom: 15px; font-size: 14px; }
-    .info-box div { padding: 2px 0; }
-    label { font-weight: bold; font-size: 14px; }
-    .declaration { display: flex; align-items: flex-start; gap: 8px; background: #fff8e1; padding: 10px; border-radius: 6px; }
-    .declaration input { width: auto; margin: 4px 0 0 0; }
-    .declaration span { font-size: 13px; }
-    .preview-box { display:none; text-align:center; margin-top:8px; }
-    .preview-box img { width: 100%; border-radius: 6px; border: 1px solid #ddd; }
-    .photo-status { font-size: 13px; color: #555; }
-    .hidden { display: none !important; }
-    #offlineBanner { display:none; background:#fff3cd; color:#7a5b00; padding:10px; border-radius:6px; font-size:13px; margin-bottom:10px; }
-    #offlineBanner button { width:auto; padding:6px 12px; font-size:13px; margin-top:6px; }
-    video { width:100%; border-radius:6px; display:none; background:#000; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="theme-color" content="#4285f4">
+<title>Market Visit Entry</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;padding:0}
+body{font-family:Arial,sans-serif;max-width:420px;margin:auto;padding:20px 20px 100px;background:#f5f7fb}
+.bg-overlay{background:rgba(255,255,255,.94);border-radius:12px;padding:15px;min-height:calc(100vh - 40px)}
+.hidden{display:none!important}
+input,select,textarea,button{width:100%;padding:10px;margin:8px 0;font-size:16px;font-family:inherit}
+input,select,textarea{border:1px solid #ccc;border-radius:7px;background:#fff}
+textarea{min-height:90px;resize:vertical}
+button{background:#4285f4;color:#fff;border:0;border-radius:7px;cursor:pointer;font-weight:bold}
+button.secondary{background:#eee;color:#333}button:disabled{background:#ccc}
+label{font-weight:bold;font-size:14px}#status,#loginStatus{margin-top:10px;font-weight:bold}
+.success{color:#198754}.error{color:#dc3545}
+.logo-wrap{text-align:center;margin-bottom:10px}.logo-wrap img{max-width:140px;max-height:90px}
+.company-name{text-align:center;font-size:20px;font-weight:bold;color:#333;margin-bottom:10px}
+.info-box{background:#f2f6ff;border-radius:7px;padding:10px;margin-bottom:15px;font-size:14px}
+.info-box div{padding:3px 0}
+.declaration{display:flex;align-items:flex-start;gap:8px;background:#fff8e1;padding:10px;border-radius:7px;margin-top:10px}
+.declaration input{width:auto;margin:4px 0}.declaration span{font-size:13px}
+.preview-box{display:none;text-align:center;margin-top:8px}.preview-box img{width:100%;max-height:280px;object-fit:cover;border-radius:7px;border:1px solid #ddd}
+.photo-status{font-size:13px;color:#555}
+#offlineBanner{display:none;background:#fff3cd;color:#7a5b00;padding:10px;border-radius:7px;font-size:13px;margin-bottom:10px}
+#offlineBanner button{width:auto;padding:6px 12px;font-size:13px}
+.dashboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:15px 0}
+.dash-card{background:#f7f9fc;border:1px solid #e1e5eb;border-radius:12px;padding:15px;min-height:110px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.dash-card:active{transform:scale(.97)}.dash-icon{font-size:28px;margin-bottom:8px}.dash-title{font-weight:bold;font-size:15px}.dash-subtitle{font-size:12px;color:#777;margin-top:4px}.dash-number{font-size:24px;font-weight:bold;margin-top:5px}
+.dashboard-status{padding:10px;border-radius:8px;background:#eef7ee;margin:12px 0;text-align:center;font-weight:bold;font-size:13px}
+#appNav{position:fixed!important;left:50%!important;bottom:0!important;top:auto!important;transform:translateX(-50%)!important;width:100%!important;max-width:420px!important;background:#fff!important;border-top:1px solid #ddd!important;box-shadow:0 -3px 15px rgba(0,0,0,.12)!important;z-index:999999!important;padding:6px 4px!important}
+.nav-row{display:grid;grid-template-columns:repeat(4,1fr);gap:2px}.nav-btn{border:0;background:transparent;color:#777;padding:7px 3px;margin:0;font-size:11px;line-height:1.15;border-radius:9px}.nav-icon{display:block;font-size:22px;line-height:24px}.nav-btn.active{color:#4285f4;background:#eef4ff;font-weight:bold}
+#appMain{padding-bottom:95px}.history-card{background:#fff;border:1px solid #e2e6ec;border-radius:10px;padding:12px;margin:10px 0;box-shadow:0 2px 7px rgba(0,0,0,.04)}
+.history-title{font-weight:bold;font-size:16px;margin-bottom:5px}.history-line{font-size:13px;padding:3px 0;color:#444;word-break:break-word}
+.history-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.history-actions button{margin:0;font-size:13px;padding:8px}
+.empty-history{text-align:center;color:#777;padding:30px 10px;background:#f7f9fc;border-radius:10px}
+.profile-row{background:#f7f9fc;border-radius:8px;padding:11px;margin:8px 0}.profile-label{font-size:12px;color:#777}.profile-value{font-weight:bold;margin-top:3px;word-break:break-word}
+@media(max-width:360px){body{padding:12px 12px 100px}.dashboard-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="bg-overlay">
+<div id="offlineBanner">⚠️ Internet connection नहीं है।<br>Internet आने के बाद फिर से try करें।<button type="button" onclick="location.reload()">🔄 Retry</button></div>
+<div id="appMain">
+<div class="logo-wrap"><img id="companyLogo" class="hidden" alt="Company Logo"></div>
+<div id="companyName" class="company-name"></div>
 
-    /* ==============================
-       DASHBOARD / APP-LIKE UI
-       ============================== */
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin: 15px 0;
-    }
+<section id="loginSection">
+<h2>🔐 Employee Login</h2><p>अपना Employee ID डालें</p>
+<label>Employee ID</label>
+<input type="text" id="empId" placeholder="Enter Employee ID" autocomplete="off">
+<button type="button" id="loginBtn" onclick="loginEmployee()">🔐 Login</button>
+<div id="loginStatus"></div>
+</section>
 
-    .dash-card {
-      background: #f7f9fc;
-      border: 1px solid #e1e5eb;
-      border-radius: 12px;
-      padding: 15px;
-      min-height: 105px;
-      cursor: pointer;
-      transition: transform .15s, box-shadow .15s;
-      box-shadow: 0 1px 4px rgba(0,0,0,.04);
-    }
-
-    .dash-card:hover {
-      box-shadow: 0 3px 10px rgba(0,0,0,.08);
-    }
-
-    .dash-card:active {
-      transform: scale(.97);
-    }
-
-    .dash-icon {
-      font-size: 28px;
-      margin-bottom: 8px;
-    }
-
-    .dash-title {
-      font-weight: bold;
-      font-size: 15px;
-    }
-
-    .dash-subtitle {
-      font-size: 12px;
-      color: #777;
-      margin-top: 4px;
-    }
-
-    .dash-number {
-      font-size: 24px;
-      font-weight: bold;
-      margin-top: 5px;
-    }
-
-    .dashboard-status {
-      padding: 10px;
-      border-radius: 8px;
-      background: #eef7ee;
-      margin: 12px 0;
-      text-align: center;
-      font-weight: bold;
-      font-size: 13px;
-    }
-
-    @media (max-width: 360px) {
-      .dashboard-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
- #appNav{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(420px,100%);background:#fff;border-top:1px solid #ddd;box-shadow:0 -3px 12px rgba(0,0,0,.08);display:none;z-index:9999;padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
-.nav-row{display:grid;grid-template-columns:repeat(4,1fr);gap:2px}
-.nav-btn{border:0;background:transparent;color:#777;padding:7px 3px;margin:0;font-size:11px;line-height:1.15;border-radius:9px}
-.nav-btn .nav-icon{display:block;font-size:22px;margin-bottom:3px}
-.nav-btn.active{color:#4285f4;font-weight:bold;background:#eef4ff}
-#appMain{padding-bottom:82px}
-  <div id="appMain">
-
-  <div id="offlineBanner">
-    📴 <span id="offlineText"></span>
-    <div><button type="button" onclick="trySync()">🔄 Sync Now</button></div>
-  </div>
-
-  <div class="logo-wrap">
-    <img id="companyLogo" src="" alt="Company Logo" style="display:none;">
-  </div>
-  <div class="company-name" id="companyNameText"></div>
-
-  <!-- LOGIN -->
-  <div id="loginSection">
-    <h3 id="loginTitleText">Login</h3>
-    <label>Employee ID</label>
-    <input type="text" id="loginEmployee" placeholder="EMP001">
-    <button onclick="checkLogin()">Login</button>
-    <div id="loginStatus"></div>
-  </div>
-
-
-  <!-- DASHBOARD -->
-  <div id="dashboardSection" style="display:none;">
-    <h3>🏠 Dashboard</h3>
-
-    <div class="info-box">
-      <div><strong>👤 Employee:</strong> <span id="dashName"></span></div>
-      <div><strong>🆔 Employee ID:</strong> <span id="dashEmpId"></span></div>
-      <div id="dashHQRow"><strong>📍 HQ:</strong> <span id="dashHQ"></span></div>
-      <div id="dashEmailRow"><strong>✉️ Email:</strong> <span id="dashEmail"></span></div>
-    </div>
-
-    <div class="dashboard-grid">
-      <div class="dash-card" onclick="openNewVisit()">
-        <div class="dash-icon">📍</div>
-        <div class="dash-title">New Visit</div>
-        <div class="dash-subtitle">Customer visit enter karein</div>
-      </div>
-
-      <div class="dash-card">
-        <div class="dash-icon">📊</div>
-        <div class="dash-title">Today's Visits</div>
-        <div class="dash-number" id="todayVisitCount">0</div>
-      </div>
-
-      <div class="dash-card">
-        <div class="dash-icon">🔔</div>
-        <div class="dash-title">Follow-ups</div>
-        <div class="dash-number" id="followupCount">0</div>
-      </div>
-
-      <div class="dash-card">
-        <div class="dash-icon">☁️</div>
-        <div class="dash-title">Sync Status</div>
-        <div class="dash-number" id="syncStatus">✓</div>
-      </div>
-    </div>
-
-    <div class="dashboard-status" id="dashboardNetwork">🟢 Online — Sync Ready</div>
-
-    <button onclick="openNewVisit()">📍 START NEW VISIT</button>
-    <button class="secondary" onclick="logout()">🚪 Logout</button>
-  </div>
-
-  <!-- FORM -->
-  <div id="formSection" style="display:none;">
-    <h3 id="pageTitleText">Market Visit Entry</h3>
-
-    <div class="info-box">
-      <div><strong>Employee:</strong> <span id="infoName"></span> (<span id="infoEmpId"></span>)</div>
-      <div id="hqRow"><strong>Head Quarter:</strong> <span id="infoHQ"></span></div>
-      <div id="emailRow"><strong>Email:</strong> <span id="infoEmail"></span></div>
-    </div>
-
-    <label>To Visit City / District / State</label>
-    <input type="text" id="visitCity" placeholder="e.g. Noida, UP">
-
-    <label>Visited Customer Firm Name</label>
-    <input type="text" id="firmName" placeholder="Firm name">
-
-    <label>Visited Customer Contact Person Name</label>
-    <input type="text" id="contactPerson" placeholder="Contact person">
-
-    <label>Visited Customer Area Pin Code</label>
-    <input type="text" id="pinCode" placeholder="e.g. 201301" inputmode="numeric">
-
-    <div id="remarksBlock">
-      <label>Visit Remarks / Discussion Notes</label>
-      <textarea id="remarks" rows="3" placeholder="e.g. Order discuss hua, samples diye..."></textarea>
-    </div>
-
-    <!-- CUSTOMER PHOTO (back camera) -->
-    <div id="photoBlock">
-      <label>Visited Customer Photo (Live Camera Only)</label>
-      <video id="cameraVideo" playsinline autoplay></video>
-      <button type="button" onclick="startCamera('customer')" id="btnOpenCamera">📷 Open Camera</button>
-      <button type="button" onclick="capturePhoto('customer')" id="btnCapture" style="display:none;">📸 Capture Photo</button>
-      <div class="photo-status" id="photoStatus"></div>
-      <div id="photoPreviewBox" class="preview-box">
-        <img id="photoPreview">
-        <button class="secondary" onclick="retakePhoto('customer')">🔄 Retake Photo</button>
-      </div>
-    </div>
-
-    <!-- EMPLOYEE SELFIE (front camera) -->
-    <div id="selfieBlock">
-      <label>Your Selfie (Live Camera Only)</label>
-      <video id="selfieVideo" playsinline autoplay></video>
-      <button type="button" onclick="startCamera('selfie')" id="btnOpenSelfieCamera">🤳 Open Selfie Camera</button>
-      <button type="button" onclick="capturePhoto('selfie')" id="btnCaptureSelfie" style="display:none;">📸 Capture Selfie</button>
-      <div class="photo-status" id="selfieStatus"></div>
-      <div id="selfiePreviewBox" class="preview-box">
-        <img id="selfiePreview">
-        <button class="secondary" onclick="retakePhoto('selfie')">🔄 Retake Selfie</button>
-      </div>
-    </div>
-
-    <div class="declaration" id="declarationBlock">
-      <input type="checkbox" id="declaration">
-      <span>I confirm that the above attendance and market visit details are true and correct.</span>
-    </div>
-
-    <button onclick="submitVisit()" id="btnSubmit" disabled>Submit Visit</button>
-    <div id="status"></div>
-
-    <button class="secondary" onclick="logout()" style="margin-top:20px;">Logout</button>
-  </div>
-
-  <!-- HISTORY -->
-  <div id="historySection" style="display:none;">
-    <h3>📋 Visit History</h3>
-    <div class="info-box"><div><strong>Employee:</strong> <span id="historyEmployee"></span></div></div>
-    <div id="historyStatus" class="photo-status"></div>
-    <div id="historyList"></div>
-  </div>
-
-  <!-- PROFILE -->
-  <div id="profileSection" style="display:none;">
-    <h3>👤 My Profile</h3>
-    <div class="profile-row"><div class="profile-label">Employee Name</div><div class="profile-value" id="profileName"></div></div>
-    <div class="profile-row"><div class="profile-label">Employee ID</div><div class="profile-value" id="profileEmpId"></div></div>
-    <div class="profile-row"><div class="profile-label">Head Quarter</div><div class="profile-value" id="profileHQ"></div></div>
-    <div class="profile-row"><div class="profile-label">Email</div><div class="profile-value" id="profileEmail"></div></div>
-    <button class="secondary" onclick="logout()">🚪 Logout</button>
-  </div>
-  </div>
-
-  <nav id="appNav"><div class="nav-row">
-    <button class="nav-btn active" id="navHome" onclick="showAppSection('home')"><span class="nav-icon">🏠</span>Home</button>
-    <button class="nav-btn" id="navVisit" onclick="showAppSection('visit')"><span class="nav-icon">📍</span>Visit</button>
-    <button class="nav-btn" id="navHistory" onclick="showAppSection('history')"><span class="nav-icon">📋</span>History</button>
-    <button class="nav-btn" id="navProfile" onclick="showAppSection('profile')"><span class="nav-icon">👤</span>Profile</button>
-  </div></nav>
-
-  <canvas id="hiddenCanvas" style="display:none;"></canvas>
-
+<section id="dashboardSection" class="hidden">
+<h2>👋 Welcome <span id="welcomeName"></span></h2>
+<div class="info-box"><div><strong>Employee ID:</strong> <span id="dashEmpId"></span></div><div><strong>Head Quarter:</strong> <span id="dashHQ"></span></div></div>
+<div id="dashboardNetwork" class="dashboard-status">🌐 Checking connection...</div>
+<div class="dashboard-grid">
+<div class="dash-card" onclick="showAppSection('visit')"><div class="dash-icon">📍</div><div class="dash-title">New Visit</div><div class="dash-subtitle">Customer visit entry</div></div>
+<div class="dash-card" onclick="showAppSection('history')"><div class="dash-icon">📋</div><div class="dash-title">Visit History</div><div class="dash-subtitle">Previous visits</div></div>
+<div class="dash-card" onclick="showAppSection('profile')"><div class="dash-icon">👤</div><div class="dash-title">My Profile</div><div class="dash-subtitle">Employee details</div></div>
+<div class="dash-card" onclick="logout()"><div class="dash-icon">🚪</div><div class="dash-title">Logout</div><div class="dash-subtitle">Exit account</div></div>
 </div>
-  <script>
-    // 🔴 YAHAN APNI APPS SCRIPT WEB APP URL DAALEIN 🔴
-    var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyRKR3zp9BfbTNTLb5_iiuubC747kDM-KVdQE5wPTll7OH8cgjIIttgzZAsx-ncPmjIhQ/exec";
-    var PENDING_KEY = "pm_pending_visits";
-
-    var settings = {};
-    var loggedIn = {};
-    var currentLat = null, currentLng = null, currentAddress = "", currentAccuracy = null;
-    var watermarkedPhotoBase64 = null;
-    var selfiePhotoBase64 = null;
-    var customerStream = null, selfieStream = null;
-
-    function callApi(payload) {
-      return fetch(APPS_SCRIPT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" }, // preflight avoid karne ke liye
-        body: JSON.stringify(payload)
-      }).then(res => res.json());
-    }
-
-    function isYes(val) {
-      return val && val.toString().trim().toUpperCase() === "YES";
-    }
-
-    // Google Drive image ke 3 alag URL formats try karta hai — kuch account/file settings
-    // me ek format kaam nahi karta, to agla try hota hai
-    function setImageWithFallback(imgId, fileId) {
-      var img = document.getElementById(imgId);
-      var formats = [
-        "https://lh3.googleusercontent.com/d/" + fileId,
-        "https://drive.google.com/thumbnail?id=" + fileId + "&sz=w500",
-        "https://drive.google.com/uc?export=view&id=" + fileId
-      ];
-      var attempt = 0;
-      img.onerror = function () {
-        attempt++;
-        if (attempt < formats.length) {
-          img.src = formats[attempt];
-        } else {
-          img.style.display = 'none';
-          console.error("Logo/background image load fail hui — Drive file ki sharing 'Anyone with the link' par set hai ya nahi check karein.");
-        }
-      };
-      img.src = formats[0];
-      img.style.display = 'inline-block';
-    }
-
-    // ============================================
-    // SETTINGS
-    // ============================================
-    function loadSettings() {
-      callApi({ action: "getSettings" }).then(function (res) {
-        if (!res.success) {
-          document.getElementById('loginStatus').innerText = "⚠️ Settings load nahi hui: " + (res.message || "unknown error");
-          return;
-        }
-        settings = res.settings;
-        applySettings();
-      }).catch(function (err) {
-        document.getElementById('loginStatus').innerText = "⚠️ Settings error: " + err.message;
-      });
-    }
-
-    function applySettings() {
-      if (settings.page_title) {
-        document.title = settings.page_title;
-        document.getElementById('pageTitleText').innerText = settings.page_title;
-      }
-      if (settings.login_title) document.getElementById('loginTitleText').innerText = settings.login_title;
-      if (settings.submit_button_text) document.getElementById('btnSubmit').innerText = settings.submit_button_text;
-
-      if (settings.company_name) {
-        var nameEl = document.getElementById('companyNameText');
-        nameEl.innerText = settings.company_name;
-        nameEl.style.color = settings.company_name_color || "#333333";
-        nameEl.style.fontSize = (settings.company_name_font_size || "20") + "px";
-        nameEl.style.display = 'block';
-      }
-
-      if (settings.logo_file_id) {
-        setImageWithFallback('companyLogo', settings.logo_file_id);
-      }
-
-      if (settings.background_image_id) {
-        var bgId = settings.background_image_id;
-        var bgUrl = "https://lh3.googleusercontent.com/d/" + bgId;
-        document.getElementById('pageBody').style.backgroundImage = "url('" + bgUrl + "')";
-        var opacity = settings.background_opacity ? parseFloat(settings.background_opacity) : 0.92;
-        document.querySelector('.bg-overlay').style.background = "rgba(255,255,255," + opacity + ")";
-      }
-
-      document.getElementById('hqRow').style.display = isYes(settings.show_hq) ? 'block' : 'none';
-      document.getElementById('emailRow').style.display = isYes(settings.show_email) ? 'block' : 'none';
-      document.getElementById('remarksBlock').style.display = isYes(settings.show_remarks) ? 'block' : 'none';
-      document.getElementById('declarationBlock').style.display = isYes(settings.declaration) ? 'flex' : 'none';
-
-      var needPhoto = isYes(settings.photo_required) || isYes(settings.live_camera_required);
-      document.getElementById('photoBlock').style.display = needPhoto ? 'block' : 'none';
-
-      var needSelfie = isYes(settings.selfie_required);
-      document.getElementById('selfieBlock').style.display = needSelfie ? 'block' : 'none';
-
-      checkEnableSubmit();
-    }
-
-    loadSettings();
-    updatePendingBanner();
-    window.addEventListener('online', trySync);
-
-    // ============================================
-    // LOGIN
-    // ============================================
-    function checkLogin() {
-      var empId = document.getElementById('loginEmployee').value.trim();
-      var loginStatus = document.getElementById('loginStatus');
-      if (!empId) { loginStatus.innerText = "Employee ID bharein"; return; }
-      loginStatus.innerText = "Checking...";
-
-      loadSettings();
-
-      callApi({ action: "verifyEmployee", empId: empId })
-        .then(function (result) {
-          if (result.success) {
-            loggedIn = result;
-            document.getElementById('loginSection').style.display = 'none';
-            document.getElementById('dashboardSection').style.display = 'block';
-            document.getElementById('formSection').style.display = 'none';
-            document.getElementById('historySection').style.display = 'none';
-            document.getElementById('profileSection').style.display = 'none';
-            document.getElementById('appNav').style.display = 'block';
-
-            document.getElementById('infoName').innerText = result.name;
-            document.getElementById('infoEmpId').innerText = result.empId;
-            document.getElementById('infoHQ').innerText = result.hq;
-            document.getElementById('infoEmail').innerText = result.email;
-
-            document.getElementById('dashName').innerText = result.name || '';
-            document.getElementById('dashEmpId').innerText = result.empId || '';
-            document.getElementById('dashHQ').innerText = result.hq || '';
-            document.getElementById('dashEmail').innerText = result.email || '';
-
-            updateDashboardNetwork();
-            updateDashboardCounts();
-          } else {
-            loginStatus.innerText = "❌ Employee ID nahi mila.";
-          }
-        })
-        .catch(function (err) {
-          loginStatus.innerText = "⚠️ Network nahi mila. Offline entries baad me kaam karengi, lekin login ke liye internet chahiye.";
-        });
-    }
-
-    function logout() {
-      loggedIn = {};
-      watermarkedPhotoBase64 = null;
-      selfiePhotoBase64 = null;
-      stopCamera('customer');
-      stopCamera('selfie');
-      document.getElementById('formSection').style.display = 'none';
-      document.getElementById('dashboardSection').style.display = 'none';
-      document.getElementById('historySection').style.display = 'none';
-      document.getElementById('profileSection').style.display = 'none';
-      document.getElementById('appNav').style.display = 'none';
-      document.getElementById('loginSection').style.display = 'block';
-      document.getElementById('loginEmployee').value = "";
-      document.getElementById('loginStatus').innerText = "";
-    }
-
-    // ============================================
-    // CAMERA (customer = back camera, selfie = front camera)
-    // ============================================
-    function startCamera(mode) {
-      var videoId = mode === 'selfie' ? 'selfieVideo' : 'cameraVideo';
-      var openBtnId = mode === 'selfie' ? 'btnOpenSelfieCamera' : 'btnOpenCamera';
-      var captureBtnId = mode === 'selfie' ? 'btnCaptureSelfie' : 'btnCapture';
-      var statusId = mode === 'selfie' ? 'selfieStatus' : 'photoStatus';
-      var facing = mode === 'selfie' ? 'user' : 'environment';
-
-      var video = document.getElementById(videoId);
-      document.getElementById(statusId).innerText = "";
-
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: false })
-        .then(function (stream) {
-          if (mode === 'selfie') selfieStream = stream; else customerStream = stream;
-          video.srcObject = stream;
-          video.style.display = 'block';
-          document.getElementById(openBtnId).style.display = 'none';
-          document.getElementById(captureBtnId).style.display = 'block';
-        })
-        .catch(function (err) {
-          document.getElementById(statusId).innerText = "Camera access error: " + err.message;
-        });
-    }
-
-    function capturePhoto(mode) {
-      var statusId = mode === 'selfie' ? 'selfieStatus' : 'photoStatus';
-      var status = document.getElementById(statusId);
-
-      if (mode === 'customer') {
-        status.innerText = "Location fetch ho raha hai...";
-        document.getElementById('btnSubmit').disabled = true;
-
-        navigator.geolocation.getCurrentPosition(function (position) {
-          currentLat = position.coords.latitude.toFixed(6);
-          currentLng = position.coords.longitude.toFixed(6);
-          currentAccuracy = Math.round(position.coords.accuracy);
-
-          var maxAcc = settings.max_gps_accuracy ? parseFloat(settings.max_gps_accuracy) : null;
-          if (maxAcc && currentAccuracy > maxAcc) {
-            status.innerText = "⚠️ GPS accuracy kam hai (" + currentAccuracy + "m). Khuli jagah me jaakar dobara try karein.";
-            return;
-          }
-
-          fetch("https://nominatim.openstreetmap.org/reverse?format=json&lat=" + currentLat + "&lon=" + currentLng)
-            .then(res => res.json())
-            .then(placeData => {
-              currentAddress = placeData.display_name || "N/A";
-              drawWatermark('customer');
-            })
-            .catch(() => {
-              currentAddress = "N/A";
-              drawWatermark('customer');
-            });
-
-        }, function (error) {
-          status.innerText = "Location error: " + error.message;
-        }, { enableHighAccuracy: true, timeout: 10000 });
-      } else {
-        drawWatermark('selfie');
-      }
-    }
-
-    function drawWatermark(mode) {
-      var videoId = mode === 'selfie' ? 'selfieVideo' : 'cameraVideo';
-      var previewId = mode === 'selfie' ? 'selfiePreview' : 'photoPreview';
-      var previewBoxId = mode === 'selfie' ? 'selfiePreviewBox' : 'photoPreviewBox';
-      var statusId = mode === 'selfie' ? 'selfieStatus' : 'photoStatus';
-
-      var video = document.getElementById(videoId);
-      var canvas = document.getElementById('hiddenCanvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      var ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      if (isYes(settings.watermark_required)) {
-        var now = new Date();
-        var line1 = loggedIn.name + " | " + now.toLocaleString();
-        var line2 = currentLat ? ("Lat: " + currentLat + ", Lng: " + currentLng) : "";
-
-        var fontSize = Math.max(16, Math.floor(canvas.width / 40));
-        ctx.font = fontSize + "px Arial";
-        var barHeight = fontSize * 2.8;
-
-        ctx.fillStyle = "rgba(0,0,0,0.55)";
-        ctx.fillRect(0, canvas.height - barHeight, canvas.width, barHeight);
-        ctx.fillStyle = "#ffffff";
-        ctx.fillText(line1, 10, canvas.height - barHeight + fontSize);
-        if (line2) ctx.fillText(line2, 10, canvas.height - barHeight + fontSize * 2);
-      }
-
-      var result = canvas.toDataURL('image/jpeg', 0.85);
-      if (mode === 'selfie') selfiePhotoBase64 = result; else watermarkedPhotoBase64 = result;
-
-      document.getElementById(previewId).src = result;
-      document.getElementById(previewBoxId).style.display = 'block';
-      document.getElementById(statusId).innerText = "✅ Photo ready";
-
-      stopCamera(mode);
-      checkEnableSubmit();
-    }
-
-    function stopCamera(mode) {
-      var stream = mode === 'selfie' ? selfieStream : customerStream;
-      if (stream) {
-        stream.getTracks().forEach(function (track) { track.stop(); });
-        if (mode === 'selfie') selfieStream = null; else customerStream = null;
-      }
-      var videoId = mode === 'selfie' ? 'selfieVideo' : 'cameraVideo';
-      var openBtnId = mode === 'selfie' ? 'btnOpenSelfieCamera' : 'btnOpenCamera';
-      var captureBtnId = mode === 'selfie' ? 'btnCaptureSelfie' : 'btnCapture';
-      document.getElementById(videoId).style.display = 'none';
-      document.getElementById(captureBtnId).style.display = 'none';
-      document.getElementById(openBtnId).style.display = 'block';
-    }
-
-    function retakePhoto(mode) {
-      var previewBoxId = mode === 'selfie' ? 'selfiePreviewBox' : 'photoPreviewBox';
-      var statusId = mode === 'selfie' ? 'selfieStatus' : 'photoStatus';
-      document.getElementById(previewBoxId).style.display = 'none';
-      document.getElementById(statusId).innerText = "";
-      if (mode === 'selfie') selfiePhotoBase64 = null; else watermarkedPhotoBase64 = null;
-      checkEnableSubmit();
-      startCamera(mode);
-    }
-
-    document.getElementById('declaration').addEventListener('change', checkEnableSubmit);
-
-    function checkEnableSubmit() {
-      var photoOk = isYes(settings.photo_required) ? !!watermarkedPhotoBase64 : true;
-      var selfieOk = isYes(settings.selfie_required) ? !!selfiePhotoBase64 : true;
-      var declOk = isYes(settings.declaration) ? document.getElementById('declaration').checked : true;
-      document.getElementById('btnSubmit').disabled = !(photoOk && selfieOk && declOk);
-    }
-
-    // ============================================
-    // SUBMIT (with offline fallback)
-    // ============================================
-    function buildPayload() {
-      var visitCity = titleCase(document.getElementById('visitCity').value.trim());
-      var firmName = document.getElementById('firmName').value.trim();
-      var contactPerson = document.getElementById('contactPerson').value.trim();
-      var pinCode = document.getElementById('pinCode').value.trim();
-      var remarks = document.getElementById('remarks').value.trim();
-
-      return {
-        action: "saveVisit",
-        data: {
-          empId: loggedIn.empId,
-          empName: loggedIn.name,
-          hq: loggedIn.hq,
-          email: loggedIn.email,
-          visitCity: visitCity,
-          firmName: firmName,
-          contactPerson: contactPerson,
-          declaration: isYes(settings.declaration) ? "Yes" : "N/A",
-          pinCode: pinCode,
-          lat: currentLat,
-          lng: currentLng,
-          accuracy: currentAccuracy,
-          address: currentAddress,
-          remarks: remarks,
-          photoBase64: watermarkedPhotoBase64,
-          selfieBase64: selfiePhotoBase64
-        }
-      };
-    }
-
-    function submitVisit() {
-      var status = document.getElementById('status');
-      var btn = document.getElementById('btnSubmit');
-
-      var visitCity = document.getElementById('visitCity').value.trim();
-      var firmName = document.getElementById('firmName').value.trim();
-      var contactPerson = document.getElementById('contactPerson').value.trim();
-      var pinCode = document.getElementById('pinCode').value.trim();
-      var remarks = document.getElementById('remarks').value.trim();
-
-      if (!visitCity || !firmName || !contactPerson || !pinCode) {
-        status.innerText = "Saari fields bharein.";
-        return;
-      }
-      if (isYes(settings.remarks_required) && !remarks) {
-        status.innerText = "Remarks bharna zaroori hai.";
-        return;
-      }
-      if (isYes(settings.photo_required) && !watermarkedPhotoBase64) {
-        status.innerText = "Photo capture karein.";
-        return;
-      }
-      if (isYes(settings.selfie_required) && !selfiePhotoBase64) {
-        status.innerText = "Selfie capture karein.";
-        return;
-      }
-
-      btn.disabled = true;
-      status.innerText = "Saving...";
-
-      var payload = buildPayload();
-
-      callApi(payload)
-        .then(function (result) {
-          if (result.status === "duplicate") {
-            status.innerText = "⚠️ Is customer ki entry aaj pehle se ho chuki hai.";
-            btn.disabled = false;
-            return;
-          }
-          if (result.status === "error") {
-            status.innerText = "❌ " + result.message;
-            btn.disabled = false;
-            return;
-          }
-          var flagMsg = (result.travelFlag && result.travelFlag !== "OK") ? (" — " + result.travelFlag) : "";
-          status.innerText = "✅ Visit entry saved!" + flagMsg;
-          resetFormAfterSubmit();
-        })
-        .catch(function (err) {
-          queueForOffline(payload);
-          status.innerText = "📴 Network nahi mila — entry offline save ho gayi. Net aane par automatically upload ho jayegi.";
-          btn.disabled = false;
-          resetFormAfterSubmit();
-        });
-    }
-
-    function resetFormAfterSubmit() {
-      document.getElementById('visitCity').value = "";
-      document.getElementById('firmName').value = "";
-      document.getElementById('contactPerson').value = "";
-      document.getElementById('pinCode').value = "";
-      document.getElementById('remarks').value = "";
-      document.getElementById('declaration').checked = false;
-      document.getElementById('photoPreviewBox').style.display = 'none';
-      document.getElementById('selfiePreviewBox').style.display = 'none';
-      watermarkedPhotoBase64 = null;
-      selfiePhotoBase64 = null;
-      checkEnableSubmit();
-      updateDashboardCounts();
-    }
-
-    // ============================================
-    // OFFLINE QUEUE
-    // ============================================
-    function getPendingQueue() {
-      try {
-        var raw = localStorage.getItem(PENDING_KEY);
-        return raw ? JSON.parse(raw) : [];
-      } catch (e) { return []; }
-    }
-
-    function setPendingQueue(queue) {
-      try {
-        localStorage.setItem(PENDING_KEY, JSON.stringify(queue));
-      } catch (e) {
-        console.error("Offline storage full or unavailable:", e);
-      }
-      updatePendingBanner();
-    }
-
-    function queueForOffline(payload) {
-      var queue = getPendingQueue();
-      queue.push(payload);
-      setPendingQueue(queue);
-    }
-
-    function updatePendingBanner() {
-      var queue = getPendingQueue();
-      var banner = document.getElementById('offlineBanner');
-      if (queue.length > 0) {
-        document.getElementById('offlineText').innerText = queue.length + " entries offline pending hain (upload nahi hui).";
-        banner.style.display = 'block';
-      } else {
-        banner.style.display = 'none';
-      }
-    }
-
-    function trySync() {
-      var queue = getPendingQueue();
-      if (queue.length === 0) return;
-
-      var remaining = queue.slice();
-      var next = remaining.shift();
-
-      callApi(next)
-        .then(function () {
-          setPendingQueue(remaining);
-          trySync();
-        })
-        .catch(function () {
-          // Ab bhi network nahi hai — baad me try hoga
-        });
-    }
-
-    setInterval(trySync, 30000);
-
-
-    // ============================================
-    // DASHBOARD
-    // ============================================
-
-    function openNewVisit() {
-      document.getElementById('dashboardSection').style.display = 'none';
-      document.getElementById('formSection').style.display = 'block';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function openDashboard() {
-      document.getElementById('formSection').style.display = 'none';
-      document.getElementById('dashboardSection').style.display = 'block';
-      updateDashboardNetwork();
-      updateDashboardCounts();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function updateDashboardNetwork() {
-      var el = document.getElementById('dashboardNetwork');
-      if (!el) return;
-
-      var queue = getPendingQueue();
-
-      if (navigator.onLine) {
-        el.innerText = queue.length
-          ? ("🟢 Online — " + queue.length + " pending sync")
-          : "🟢 Online — Sync Ready";
-        el.style.background = queue.length ? "#fff3cd" : "#eef7ee";
-      } else {
-        el.innerText = queue.length
-          ? ("🔴 Offline — " + queue.length + " visit(s) pending")
-          : "🔴 Offline — Data locally save hoga";
-        el.style.background = "#fff3cd";
-      }
-
-      var syncEl = document.getElementById('syncStatus');
-      if (syncEl) syncEl.innerText = queue.length ? queue.length : "✓";
-    }
-
-    function updateDashboardCounts() {
-      var queue = getPendingQueue();
-
-      // Offline queue ko today's pending count ke roop me dikha rahe hain.
-      // Actual server-side today's visit count future dashboard API se liya ja sakta hai.
-      var countEl = document.getElementById('todayVisitCount');
-      if (countEl && queue.length) {
-        countEl.innerText = queue.length;
-      }
-
-      var followEl = document.getElementById('followupCount');
-      if (followEl) followEl.innerText = "0";
-
-      updateDashboardNetwork();
-    }
-
-    window.addEventListener('online', function () {
-      updateDashboardNetwork();
-      trySync();
-    });
-
-    window.addEventListener('offline', updateDashboardNetwork);
-
-
-    function showAppSection(section){
-      if(!loggedIn || !loggedIn.empId) return;
-      ['dashboardSection','formSection','historySection','profileSection'].forEach(function(id){
-        document.getElementById(id).style.display='none';
-      });
-      if(section==='home'){
-        document.getElementById('dashboardSection').style.display='block';
-        updateDashboardNetwork(); updateDashboardCounts();
-      }else if(section==='visit'){
-        document.getElementById('formSection').style.display='block';
-      }else if(section==='history'){
-        document.getElementById('historySection').style.display='block';
-        loadVisitHistory();
-      }else{
-        document.getElementById('profileSection').style.display='block';
-        loadProfile();
-      }
-      ['Home','Visit','History','Profile'].forEach(function(n){
-        document.getElementById('nav'+n).classList.toggle('active',n.toLowerCase()===section);
-      });
-      window.scrollTo({top:0,behavior:'smooth'});
-    }
-
-    function openNewVisit(){ showAppSection('visit'); }
-    function openDashboard(){ showAppSection('home'); }
-
-    function loadProfile(){
-      document.getElementById('profileName').innerText=loggedIn.name||'';
-      document.getElementById('profileEmpId').innerText=loggedIn.empId||'';
-      document.getElementById('profileHQ').innerText=loggedIn.hq||'';
-      document.getElementById('profileEmail').innerText=loggedIn.email||'';
-    }
-
-    function loadVisitHistory(){
-      var list=document.getElementById('historyList'), status=document.getElementById('historyStatus');
-      document.getElementById('historyEmployee').innerText=loggedIn.name||loggedIn.empId||'';
-      list.innerHTML=''; status.innerText='Loading history...';
-      callApi({action:'getMyVisits',empId:loggedIn.empId,limit:50}).then(function(r){
-        if(!r || !r.success){status.innerText='❌ '+((r&&r.message)||'History load nahi hui.');return;}
-        status.innerText=r.visits.length?'Showing latest '+r.visits.length+' visit(s)':'';
-        if(!r.visits.length){list.innerHTML='<div class="empty-history">📋 Abhi koi visit history nahi mili.</div>';return;}
-        r.visits.forEach(function(v){
-          var card=document.createElement('div'); card.className='history-card';
-          var title=document.createElement('div'); title.className='history-title'; title.innerText='🏢 '+(v.firmName||'Customer'); card.appendChild(title);
-          [['📅',v.timestamp],['📍',v.visitCity],['👤',v.contactPerson],['📌',v.latLong],['⚠️',v.travelFlag],['📝',v.remarks]].forEach(function(x){
-            if(x[1]){var line=document.createElement('div');line.className='history-line';line.innerText=x[0]+' '+x[1];card.appendChild(line);}
-          });
-          var actions=document.createElement('div'); actions.className='history-actions';
-          function addBtn(label,url){if(!url)return;var b=document.createElement('button');b.type='button';b.innerText=label;b.onclick=function(){window.open(url,'_blank');};actions.appendChild(b);}
-          addBtn('📸 Customer Photo',v.photoUrl); addBtn('🤳 Selfie',v.selfieUrl); addBtn('🗺️ Map',v.geoLocation);
-          if(actions.children.length)card.appendChild(actions); list.appendChild(card);
-        });
-      }).catch(function(e){status.innerText='❌ Network error: '+e.message;});
-    }
-
-    function titleCase(str) {
-      return str.replace(/\w\S*/g, function (t) {
-        return t.charAt(0).toUpperCase() + t.substr(1).toLowerCase();
-      });
-    }
-  </script>
+<div class="info-box"><strong>Today's Visits</strong><div id="todayVisits" class="dash-number">0</div></div>
+</section>
+
+<section id="formSection" class="hidden">
+<h2>📍 Market Visit Entry</h2>
+<div class="info-box"><div><strong>Employee:</strong> <span id="formEmpName"></span></div><div><strong>Employee ID:</strong> <span id="formEmpId"></span></div><div><strong>Head Quarter:</strong> <span id="formHQ"></span></div></div>
+<label>To Visit City / District / State</label><input type="text" id="visitCity" placeholder="Enter city / district / state">
+<label>Visited Customer Firm Name</label><input type="text" id="firmName" placeholder="Customer firm name">
+<label>Visited Customer Contact Person Name</label><input type="text" id="contactPerson" placeholder="Contact person">
+<label>Visited Customer Area PIN Code</label><input type="number" id="pinCode" placeholder="PIN Code">
+<label>Address</label><textarea id="address" placeholder="Customer address"></textarea>
+<label>Visit Remarks</label><textarea id="remarks" placeholder="Enter visit remarks"></textarea>
+<label>📸 Customer Photo</label><input type="file" id="customerPhoto" accept="image/*" capture="environment"><div id="customerPhotoStatus" class="photo-status"></div>
+<div id="customerPreview" class="preview-box"><img id="customerPreviewImg" alt="Customer Photo"></div>
+<label>🤳 Employee Selfie</label><input type="file" id="selfiePhoto" accept="image/*" capture="user"><div id="selfieStatus" class="photo-status"></div>
+<div id="selfiePreview" class="preview-box"><img id="selfiePreviewImg" alt="Employee Selfie"></div>
+<div class="info-box"><strong>📍 Current Location</strong><div id="gpsStatus">Location not captured</div></div>
+<button type="button" id="locationBtn" onclick="getLocation()">📍 Get Current Location</button>
+<div class="declaration"><input type="checkbox" id="declaration"><span>I confirm that this market visit is genuine and the information provided above is correct.</span></div>
+<button type="button" id="submitBtn" onclick="submitVisit()">✅ Submit Visit</button>
+<button type="button" class="secondary" onclick="showAppSection('home')">← Back to Home</button>
+<div id="status"></div>
+</section>
+
+<section id="historySection" class="hidden">
+<h2>📋 Visit History</h2><div class="info-box"><div><strong>Employee:</strong> <span id="historyEmployee"></span></div></div>
+<div id="historyStatus" class="photo-status">Loading...</div><div id="historyList"></div>
+<button type="button" class="secondary" onclick="showAppSection('home')">← Back to Home</button>
+</section>
+
+<section id="profileSection" class="hidden">
+<h2>👤 My Profile</h2>
+<div class="profile-row"><div class="profile-label">Employee Name</div><div class="profile-value" id="profileName"></div></div>
+<div class="profile-row"><div class="profile-label">Employee ID</div><div class="profile-value" id="profileEmpId"></div></div>
+<div class="profile-row"><div class="profile-label">Head Quarter</div><div class="profile-value" id="profileHQ"></div></div>
+<div class="profile-row"><div class="profile-label">Email</div><div class="profile-value" id="profileEmail"></div></div>
+<button type="button" class="secondary" onclick="showAppSection('home')">← Back to Home</button><button type="button" onclick="logout()">🚪 Logout</button>
+</section>
+</div>
+
+<nav id="appNav" class="hidden"><div class="nav-row">
+<button type="button" class="nav-btn active" id="navHome" onclick="showAppSection('home')"><span class="nav-icon">🏠</span>Home</button>
+<button type="button" class="nav-btn" id="navVisit" onclick="showAppSection('visit')"><span class="nav-icon">📍</span>Visit</button>
+<button type="button" class="nav-btn" id="navHistory" onclick="showAppSection('history')"><span class="nav-icon">📋</span>History</button>
+<button type="button" class="nav-btn" id="navProfile" onclick="showAppSection('profile')"><span class="nav-icon">👤</span>Profile</button>
+</div></nav>
+</div>
+
+<script>
+const API_URL="PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
+let loggedIn=null,currentLocation={lat:"",lng:"",accuracy:""};
+
+document.addEventListener("DOMContentLoaded",()=>{updateNetworkStatus();window.addEventListener("online",updateNetworkStatus);window.addEventListener("offline",updateNetworkStatus);document.getElementById("customerPhoto").addEventListener("change",previewCustomerPhoto);document.getElementById("selfiePhoto").addEventListener("change",previewSelfie);});
+
+async function callApi(payload){if(!navigator.onLine)throw new Error("Internet connection उपलब्ध नहीं है.");const r=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});if(!r.ok)throw new Error("Server Error: "+r.status);return await r.json();}
+
+async function loginEmployee(){const empId=document.getElementById("empId").value.trim(),s=document.getElementById("loginStatus"),b=document.getElementById("loginBtn");if(!empId){s.innerText="⚠️ Employee ID डालें.";s.className="error";return}b.disabled=true;b.innerText="Checking...";s.innerText="Employee verify हो रहा है...";try{const r=await callApi({action:"verifyEmployee",empId});if(r&&r.success){loggedIn=r;document.getElementById("loginSection").classList.add("hidden");document.getElementById("appNav").classList.remove("hidden");fillEmployeeDetails();showAppSection("home")}else{s.innerText="❌ Invalid Employee ID.";s.className="error"}}catch(e){s.innerText="❌ "+e.message;s.className="error"}b.disabled=false;b.innerText="🔐 Login";}
+
+function fillEmployeeDetails(){if(!loggedIn)return;document.getElementById("welcomeName").innerText=loggedIn.name||"";document.getElementById("dashEmpId").innerText=loggedIn.empId||"";document.getElementById("dashHQ").innerText=loggedIn.hq||"";document.getElementById("formEmpName").innerText=loggedIn.name||"";document.getElementById("formEmpId").innerText=loggedIn.empId||"";document.getElementById("formHQ").innerText=loggedIn.hq||"";document.getElementById("historyEmployee").innerText=loggedIn.name||loggedIn.empId||"";document.getElementById("profileName").innerText=loggedIn.name||"";document.getElementById("profileEmpId").innerText=loggedIn.empId||"";document.getElementById("profileHQ").innerText=loggedIn.hq||"";document.getElementById("profileEmail").innerText=loggedIn.email||"";}
+
+function showAppSection(x){if(!loggedIn)return;["dashboardSection","formSection","historySection","profileSection"].forEach(id=>document.getElementById(id).classList.add("hidden"));if(x==="home"){document.getElementById("dashboardSection").classList.remove("hidden");updateDashboardNetwork();updateDashboardCounts()}if(x==="visit")document.getElementById("formSection").classList.remove("hidden");if(x==="history"){document.getElementById("historySection").classList.remove("hidden");loadVisitHistory()}if(x==="profile"){document.getElementById("profileSection").classList.remove("hidden");fillEmployeeDetails()}updateNav(x);window.scrollTo({top:0,behavior:"smooth"});}
+function updateNav(x){const m={home:"navHome",visit:"navVisit",history:"navHistory",profile:"navProfile"};["navHome","navVisit","navHistory","navProfile"].forEach(id=>document.getElementById(id).classList.remove("active"));if(m[x])document.getElementById(m[x]).classList.add("active");}
+function updateNetworkStatus(){document.getElementById("offlineBanner").style.display=navigator.onLine?"none":"block";updateDashboardNetwork();}
+function updateDashboardNetwork(){const e=document.getElementById("dashboardNetwork");if(e)e.innerText=navigator.onLine?"🟢 Internet Connected":"🔴 Offline";}
+
+function getLocation(){const s=document.getElementById("gpsStatus"),b=document.getElementById("locationBtn");if(!navigator.geolocation){s.innerText="❌ GPS supported नहीं है.";return}b.disabled=true;b.innerText="📍 Getting Location...";s.innerText="Location प्राप्त की जा रही है...";navigator.geolocation.getCurrentPosition(p=>{currentLocation={lat:p.coords.latitude,lng:p.coords.longitude,accuracy:p.coords.accuracy};s.innerText="✅ Location Captured | Accuracy: "+Math.round(p.coords.accuracy)+" m";b.disabled=false;b.innerText="✅ Location Captured"},e=>{s.innerText="❌ Location नहीं मिली: "+e.message;b.disabled=false;b.innerText="📍 Try Again"},{enableHighAccuracy:true,timeout:15000,maximumAge:0});}
+
+function imageToBase64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file);});}
+function previewCustomerPhoto(e){const f=e.target.files[0];if(!f)return;document.getElementById("customerPreviewImg").src=URL.createObjectURL(f);document.getElementById("customerPreview").style.display="block";document.getElementById("customerPhotoStatus").innerText="✅ Customer photo selected.";}
+function previewSelfie(e){const f=e.target.files[0];if(!f)return;document.getElementById("selfiePreviewImg").src=URL.createObjectURL(f);document.getElementById("selfiePreview").style.display="block";document.getElementById("selfieStatus").innerText="✅ Selfie selected.";}
+
+async function submitVisit(){if(!loggedIn){alert("पहले Login करें.");return}const city=document.getElementById("visitCity").value.trim(),firm=document.getElementById("firmName").value.trim(),contact=document.getElementById("contactPerson").value.trim(),pin=document.getElementById("pinCode").value.trim(),address=document.getElementById("address").value.trim(),remarks=document.getElementById("remarks").value.trim(),dec=document.getElementById("declaration").checked,pf=document.getElementById("customerPhoto").files[0],sf=document.getElementById("selfiePhoto").files[0],s=document.getElementById("status");if(!city){s.innerText="⚠️ Visit City भरें.";s.className="error";return}if(!firm){s.innerText="⚠️ Customer Firm Name भरें.";s.className="error";return}if(!currentLocation.lat){s.innerText="⚠️ पहले Current Location लें.";s.className="error";return}if(!dec){s.innerText="⚠️ Declaration accept करें.";s.className="error";return}const b=document.getElementById("submitBtn");b.disabled=true;b.innerText="⏳ Saving...";s.innerText="Visit save हो रही है...";try{const photoBase64=pf?await imageToBase64(pf):"",selfieBase64=sf?await imageToBase64(sf):"";const data={empId:loggedIn.empId,empName:loggedIn.name,email:loggedIn.email,hq:loggedIn.hq,visitCity:city,firmName:firm,contactPerson:contact,declaration:"YES",pinCode:pin,address,remarks,lat:currentLocation.lat,lng:currentLocation.lng,accuracy:currentLocation.accuracy,photoBase64,selfieBase64};const r=await callApi({action:"saveVisit",data});if(r.status==="success"){s.innerText="✅ Visit successfully saved.";s.className="success";alert("✅ Market Visit Successfully Saved!");clearVisitForm();showAppSection("home")}else if(r.status==="duplicate"){s.innerText="⚠️ आज इस customer की visit पहले से मौजूद है.";s.className="error"}else{s.innerText="❌ "+(r.message||"Visit save नहीं हुई.");s.className="error"}}catch(e){s.innerText="❌ "+e.message;s.className="error"}b.disabled=false;b.innerText="✅ Submit Visit";}
+
+function clearVisitForm(){["visitCity","firmName","contactPerson","pinCode","address","remarks"].forEach(id=>document.getElementById(id).value="");document.getElementById("declaration").checked=false;document.getElementById("customerPhoto").value="";document.getElementById("selfiePhoto").value="";document.getElementById("customerPreview").style.display="none";document.getElementById("selfiePreview").style.display="none";document.getElementById("customerPhotoStatus").innerText="";document.getElementById("selfieStatus").innerText="";currentLocation={lat:"",lng:"",accuracy:""};document.getElementById("gpsStatus").innerText="Location not captured";document.getElementById("locationBtn").innerText="📍 Get Current Location";}
+
+async function loadVisitHistory(){if(!loggedIn)return;const s=document.getElementById("historyStatus"),list=document.getElementById("historyList");s.innerText="⏳ Loading history...";list.innerHTML="";try{const r=await callApi({action:"getMyVisits",empId:loggedIn.empId});if(!r||!r.success){s.innerText="❌ "+(r.message||"History load नहीं हुई.");return}const vs=r.visits||[];if(!vs.length){s.innerText="";list.innerHTML="<div class='empty-history'>📋<br><br>अभी कोई visit history नहीं मिली।</div>";return}s.innerText="Latest "+vs.length+" visits";vs.forEach(v=>{const c=document.createElement("div");c.className="history-card";c.innerHTML="<div class='history-title'>🏢 "+escapeHtml(v.firmName||"Customer")+"</div>"+historyLine("📅",v.timestamp)+historyLine("📍",v.visitCity)+historyLine("👤",v.contactPerson)+historyLine("📌",v.latLong)+historyLine("⚠️",v.travelFlag)+historyLine("📝",v.remarks);const a=document.createElement("div");a.className="history-actions";addHistoryButton(a,"📸 Customer Photo",v.photoUrl);addHistoryButton(a,"🤳 Selfie",v.selfieUrl);addHistoryButton(a,"🗺️ Map",v.geoLocation);if(a.children.length)c.appendChild(a);list.appendChild(c)})}catch(e){s.innerText="❌ "+e.message}}
+
+function historyLine(i,v){return v?"<div class='history-line'>"+i+" "+escapeHtml(String(v))+"</div>":""}
+function addHistoryButton(c,l,u){if(!u)return;const b=document.createElement("button");b.type="button";b.innerText=l;b.onclick=()=>window.open(u,"_blank");c.appendChild(b)}
+function escapeHtml(t){const d=document.createElement("div");d.textContent=t;return d.innerHTML}
+
+async function updateDashboardCounts(){if(!loggedIn)return;try{const r=await callApi({action:"getMyVisits",empId:loggedIn.empId});if(!r||!r.success)return;const today=new Date(),ds=String(today.getDate()).padStart(2,"0")+"-"+String(today.getMonth()+1).padStart(2,"0")+"-"+today.getFullYear();let n=0;(r.visits||[]).forEach(v=>{if(v.timestamp&&String(v.timestamp).indexOf(ds)===0)n++});document.getElementById("todayVisits").innerText=n}catch(e){console.log(e)}}
+
+function logout(){loggedIn=null;document.getElementById("appNav").classList.add("hidden");["dashboardSection","formSection","historySection","profileSection"].forEach(id=>document.getElementById(id).classList.add("hidden"));document.getElementById("loginSection").classList.remove("hidden");document.getElementById("empId").value="";document.getElementById("loginStatus").innerText="";window.scrollTo({top:0,behavior:"smooth"});}
+</script>
 </body>
 </html>
