@@ -26,6 +26,17 @@ label{font-weight:bold;font-size:14px}
 #offlineBanner{display:none;background:#fff3cd;color:#7a5b00;padding:10px;border-radius:7px;font-size:13px;margin-bottom:10px}
 #offlineBanner button{width:auto;padding:6px 12px;font-size:13px}
 video{width:100%;border-radius:7px;display:none;background:#000}
+.cam-wrap{position:relative;display:none}
+.cam-wrap.active{display:block}
+.cam-wrap video{border-radius:12px;display:block;box-shadow:0 0 0 2px #222}
+.cam-loading{position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:#fff;font-size:13px;background:rgba(0,0,0,.35);border-radius:12px}
+.cam-controls{display:flex;align-items:center;justify-content:center;gap:22px;margin-top:10px}
+.cam-icon-btn{width:42px;height:42px;border-radius:50%;background:#333;color:#fff;border:0;font-size:18px;display:flex;align-items:center;justify-content:center;padding:0;margin:0}
+.cam-icon-btn.off{opacity:.4}
+.shutter-btn{width:64px;height:64px;border-radius:50%;background:#fff;border:4px solid #4285f4;padding:0;margin:0;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.shutter-btn:active{transform:scale(.93)}
+.flash-effect{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:9999}
+.flash-effect.flashing{opacity:1;transition:opacity .35s ease-out}
 .dashboard{display:none}
 .dashboard-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:15px 0}
 .dash-card{background:#f7f9fc;border:1px solid #e1e5eb;border-radius:12px;padding:15px;min-height:105px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.04)}
@@ -103,10 +114,16 @@ video{width:100%;border-radius:7px;display:none;background:#000}
 
 <div id="photoBlock">
 <label>Visited Customer Photo (Live Camera Only)</label>
+<div class="cam-wrap" id="camWrapCustomer">
 <video id="cameraVideo" playsinline autoplay muted></video>
+<div class="cam-loading" id="camLoadingCustomer">📷 Camera khul raha hai...</div>
+</div>
 <button type="button" onclick="startCamera('customer')" id="btnOpenCamera">📷 Open Camera</button>
-<button type="button" onclick="switchCamera('customer')" id="btnSwitchCamera" style="display:none">🔄 Switch Front/Back</button>
-<button type="button" onclick="capturePhoto('customer')" id="btnCapture" style="display:none">📸 Capture Photo</button>
+<div class="cam-controls" id="camControlsCustomer" style="display:none">
+<button type="button" class="cam-icon-btn" onclick="switchCamera('customer')" title="Switch Front/Back">🔄</button>
+<button type="button" class="shutter-btn" onclick="capturePhoto('customer')" id="btnCapture" title="Capture"></button>
+<button type="button" class="cam-icon-btn off" onclick="toggleFlash('customer')" id="btnFlashCustomer" title="Flash" style="display:none">⚡</button>
+</div>
 <div class="photo-status" id="photoStatus"></div>
 <div id="photoPreviewBox" class="preview-box">
 <img id="photoPreview">
@@ -116,10 +133,16 @@ video{width:100%;border-radius:7px;display:none;background:#000}
 
 <div id="selfieBlock">
 <label>Your Selfie (Live Camera Only)</label>
+<div class="cam-wrap" id="camWrapSelfie">
 <video id="selfieVideo" playsinline autoplay muted></video>
+<div class="cam-loading" id="camLoadingSelfie">🤳 Camera khul raha hai...</div>
+</div>
 <button type="button" onclick="startCamera('selfie')" id="btnOpenSelfieCamera">🤳 Open Selfie Camera</button>
-<button type="button" onclick="switchCamera('selfie')" id="btnSwitchSelfieCamera" style="display:none">🔄 Switch Front/Back</button>
-<button type="button" onclick="capturePhoto('selfie')" id="btnCaptureSelfie" style="display:none">📸 Capture Selfie</button>
+<div class="cam-controls" id="camControlsSelfie" style="display:none">
+<button type="button" class="cam-icon-btn" onclick="switchCamera('selfie')" title="Switch Front/Back">🔄</button>
+<button type="button" class="shutter-btn" onclick="capturePhoto('selfie')" id="btnCaptureSelfie" title="Capture"></button>
+<button type="button" class="cam-icon-btn off" onclick="toggleFlash('selfie')" id="btnFlashSelfie" title="Flash" style="display:none">⚡</button>
+</div>
 <div class="photo-status" id="selfieStatus"></div>
 <div id="selfiePreviewBox" class="preview-box">
 <img id="selfiePreview">
@@ -139,18 +162,20 @@ video{width:100%;border-radius:7px;display:none;background:#000}
 </div>
 
 <canvas id="hiddenCanvas" style="display:none"></canvas>
+<div class="flash-effect" id="flashEffect"></div>
 </div>
 
 <script>
-var APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbxYvvBBLRHZPd_H5SpbCt9QWB2IatrKuHMlx-IIDgyrZuxjDXLpZEzlACfc9WndZjPRBQ/exec";
+var APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbxsbRFDeJSeq9IOOvZHdnXNMvsLh69aRnOUzf6_gspxxWnQ9-aN9O1Omj70N8NOa7N8mg/exec";
 // Change this to a random string, and check the SAME value inside Code.gs before accepting any request.
-var APP_SECRET="1wsdsfccghvdf-szchsfcbkrdvb";
+var APP_SECRET="CHANGE_THIS_TO_A_RANDOM_SECRET";
 var PENDING_KEY="pm_pending_visits";
 var MAX_RETRY=5;
 var settings={},loggedIn={},currentLat=null,currentLng=null,currentAddress="",currentAccuracy=null;
 var watermarkedPhotoBase64=null,selfiePhotoBase64=null,customerStream=null,selfieStream=null;
 var customerFacing="environment",selfieFacing="user";
 var lastVisitHistory=[];
+var customerTorchOn=false,selfieTorchOn=false;
 
 function callApi(payload){payload.secret=APP_SECRET;return fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)}).then(function(r){return r.json();});}
 function isYes(v){return v&&v.toString().trim().toUpperCase()==="YES";}
@@ -258,11 +283,35 @@ document.getElementById("dashToday").innerText="✅ GPS OK | Accuracy: "+current
 }
 
 function startCamera(mode){
-var videoId=mode==="selfie"?"selfieVideo":"cameraVideo",openId=mode==="selfie"?"btnOpenSelfieCamera":"btnOpenCamera",capId=mode==="selfie"?"btnCaptureSelfie":"btnCapture",switchId=mode==="selfie"?"btnSwitchSelfieCamera":"btnSwitchCamera",statusId=mode==="selfie"?"selfieStatus":"photoStatus",facing=mode==="selfie"?selfieFacing:customerFacing;
-navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing}},audio:false}).then(function(stream){
+var videoId=mode==="selfie"?"selfieVideo":"cameraVideo",openId=mode==="selfie"?"btnOpenSelfieCamera":"btnOpenCamera",wrapId=mode==="selfie"?"camWrapSelfie":"camWrapCustomer",loadId=mode==="selfie"?"camLoadingSelfie":"camLoadingCustomer",controlsId=mode==="selfie"?"camControlsSelfie":"camControlsCustomer",flashBtnId=mode==="selfie"?"btnFlashSelfie":"btnFlashCustomer",statusId=mode==="selfie"?"selfieStatus":"photoStatus",facing=mode==="selfie"?selfieFacing:customerFacing;
+document.getElementById(wrapId).classList.add("active");
+document.getElementById(loadId).style.display="flex";
+document.getElementById(openId).style.display="none";
+navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing},width:{ideal:1920},height:{ideal:1080}},audio:false}).then(function(stream){
 if(mode==="selfie")selfieStream=stream;else customerStream=stream;
-var v=document.getElementById(videoId);v.srcObject=stream;v.style.display="block";document.getElementById(openId).style.display="none";document.getElementById(capId).style.display="block";document.getElementById(switchId).style.display="block";
-}).catch(function(e){document.getElementById(statusId).innerText="Camera access error: "+e.message;});
+var v=document.getElementById(videoId);v.srcObject=stream;v.style.display="block";
+document.getElementById(loadId).style.display="none";
+document.getElementById(controlsId).style.display="flex";
+var track=stream.getVideoTracks()[0],caps=track.getCapabilities?track.getCapabilities():{};
+var flashBtn=document.getElementById(flashBtnId);
+if(caps.torch){flashBtn.style.display="flex";}else{flashBtn.style.display="none";}
+}).catch(function(e){
+document.getElementById(loadId).style.display="none";
+document.getElementById(wrapId).classList.remove("active");
+document.getElementById(openId).style.display="block";
+document.getElementById(statusId).innerText="Camera access error: "+e.message;
+});
+}
+
+function toggleFlash(mode){
+var stream=mode==="selfie"?selfieStream:customerStream;if(!stream)return;
+var track=stream.getVideoTracks()[0];if(!track)return;
+var on=mode==="selfie"?!selfieTorchOn:!customerTorchOn;
+track.applyConstraints({advanced:[{torch:on}]}).then(function(){
+if(mode==="selfie")selfieTorchOn=on;else customerTorchOn=on;
+var btn=document.getElementById(mode==="selfie"?"btnFlashSelfie":"btnFlashCustomer");
+if(on)btn.classList.remove("off");else btn.classList.add("off");
+}).catch(function(){});
 }
 
 function switchCamera(mode){
@@ -273,6 +322,7 @@ startCamera(mode);
 
 function capturePhoto(mode){
 var statusId=mode==="selfie"?"selfieStatus":"photoStatus",s=document.getElementById(statusId);
+triggerShutterFlash();
 if(mode==="customer"){
 s.innerText="Location fetch ho raha hai...";document.getElementById("btnSubmit").disabled=true;
 navigator.geolocation.getCurrentPosition(function(p){
@@ -284,11 +334,50 @@ fetch("https://nominatim.openstreetmap.org/reverse?format=json&lat="+currentLat+
 }else drawWatermark("selfie");
 }
 
+function triggerShutterFlash(){
+var el=document.getElementById("flashEffect");
+el.classList.add("flashing");
+setTimeout(function(){el.classList.remove("flashing");},120);
+}
+
 function drawWatermark(mode){
 var video=document.getElementById(mode==="selfie"?"selfieVideo":"cameraVideo"),preview=document.getElementById(mode==="selfie"?"selfiePreview":"photoPreview"),box=document.getElementById(mode==="selfie"?"selfiePreviewBox":"photoPreviewBox"),sid=document.getElementById(mode==="selfie"?"selfieStatus":"photoStatus"),c=document.getElementById("hiddenCanvas");
 var MAX_W=1280,vw=video.videoWidth,vh=video.videoHeight,scale=vw>MAX_W?MAX_W/vw:1;
 c.width=Math.round(vw*scale);c.height=Math.round(vh*scale);var ctx=c.getContext("2d");ctx.drawImage(video,0,0,c.width,c.height);
-if(isYes(settings.watermark_required)){var f=Math.max(16,Math.floor(c.width/40)),bar=f*2.8;ctx.font=f+"px Arial";ctx.fillStyle="rgba(0,0,0,.55)";ctx.fillRect(0,c.height-bar,c.width,bar);ctx.fillStyle="#fff";ctx.fillText((loggedIn.name||"Employee")+" | "+new Date().toLocaleString(),10,c.height-bar+f);if(currentLat)ctx.fillText("Lat: "+currentLat+", Lng: "+currentLng,10,c.height-bar+f*2);}
+if(isYes(settings.watermark_required)){
+var pad=Math.max(10,Math.floor(c.width/60));
+var fBig=Math.max(14,Math.floor(c.width/34)),fSmall=Math.max(11,Math.floor(c.width/48));
+var lines=[
+(loggedIn.name||"Employee")+" ("+(loggedIn.empId||"")+")",
+new Date().toLocaleString(),
+currentLat?("📍 "+currentLat+", "+currentLng+(currentAccuracy?"  ±"+currentAccuracy+"m":"")):"",
+currentAddress?currentAddress:""
+].filter(Boolean);
+ctx.font=fSmall+"px Arial";
+var wrapped=[];
+lines.forEach(function(line,idx){
+var maxWidth=c.width-pad*2;
+if(ctx.measureText(line).width<=maxWidth){wrapped.push({text:line,big:idx===0});return;}
+var words=line.split(" "),cur="";
+words.forEach(function(w){
+var test=cur?cur+" "+w:w;
+if(ctx.measureText(test).width>maxWidth&&cur){wrapped.push({text:cur,big:idx===0});cur=w;}else cur=test;
+});
+if(cur)wrapped.push({text:cur,big:idx===0});
+});
+var lineH=fSmall+6,barH=wrapped.length*lineH+pad*1.6;
+var grad=ctx.createLinearGradient(0,c.height-barH,0,c.height);
+grad.addColorStop(0,"rgba(0,0,0,0)");grad.addColorStop(0.35,"rgba(0,0,0,.55)");grad.addColorStop(1,"rgba(0,0,0,.72)");
+ctx.fillStyle=grad;ctx.fillRect(0,c.height-barH,c.width,barH);
+ctx.fillStyle="#4285f4";ctx.fillRect(0,c.height-barH,4,barH);
+var ty=c.height-barH+pad*0.9+fSmall;
+wrapped.forEach(function(l){
+ctx.font=(l.big?"bold "+fBig:fSmall)+"px Arial";
+ctx.fillStyle=l.big?"#ffffff":"#e8eef7";
+ctx.fillText(l.text,pad+8,ty);
+ty+=lineH+(l.big?4:0);
+});
+}
 var result=c.toDataURL("image/jpeg",.7);
 if(mode==="selfie")selfiePhotoBase64=result;else watermarkedPhotoBase64=result;
 preview.src=result;box.style.display="block";document.getElementById(sid).innerText="✅ Photo ready";stopCamera(mode);checkEnableSubmit();
@@ -296,10 +385,13 @@ preview.src=result;box.style.display="block";document.getElementById(sid).innerT
 
 function stopCamera(mode,switching){
 var stream=mode==="selfie"?selfieStream:customerStream;if(stream){stream.getTracks().forEach(function(t){t.stop();});if(mode==="selfie")selfieStream=null;else customerStream=null;}
-var v=mode==="selfie"?"selfieVideo":"cameraVideo",o=mode==="selfie"?"btnOpenSelfieCamera":"btnOpenCamera",c=mode==="selfie"?"btnCaptureSelfie":"btnCapture",sw=mode==="selfie"?"btnSwitchSelfieCamera":"btnSwitchCamera";
+var v=mode==="selfie"?"selfieVideo":"cameraVideo",o=mode==="selfie"?"btnOpenSelfieCamera":"btnOpenCamera",wrapId=mode==="selfie"?"camWrapSelfie":"camWrapCustomer",controlsId=mode==="selfie"?"camControlsSelfie":"camControlsCustomer";
 var videoEl=document.getElementById(v);
 videoEl.pause();videoEl.srcObject=null;videoEl.removeAttribute("src");videoEl.load();
-videoEl.style.display="none";document.getElementById(c).style.display="none";document.getElementById(sw).style.display="none";
+videoEl.style.display="none";
+document.getElementById(controlsId).style.display="none";
+document.getElementById(wrapId).classList.remove("active");
+if(mode==="selfie")selfieTorchOn=false;else customerTorchOn=false;
 if(!switching)document.getElementById(o).style.display="block";
 }
 function retakePhoto(mode){var b=mode==="selfie"?"selfiePreviewBox":"photoPreviewBox",s=mode==="selfie"?"selfieStatus":"photoStatus";document.getElementById(b).style.display="none";document.getElementById(s).innerText="";if(mode==="selfie")selfiePhotoBase64=null;else watermarkedPhotoBase64=null;checkEnableSubmit();startCamera(mode);}
