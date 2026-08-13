@@ -62,13 +62,21 @@ video{width:100%;border-radius:7px;display:none;background:#000}
 <div><strong>Head Quarter:</strong> <span id="dashHQ"></span></div>
 </div>
 <div id="dashboardNetwork" class="dashboard-status">🌐 Checking connection...</div>
+<div class="dashboard-status" id="todayVisitCard">📊 Aaj ki Visits: <span id="todayVisitCount">-</span></div>
 <div class="dashboard-grid">
 <div class="dash-card" onclick="openNewVisit()"><div class="dash-icon">📍</div><div class="dash-title">New Visit</div><div class="dash-subtitle">Customer visit entry</div></div>
 <div class="dash-card" onclick="openVisitForm()"><div class="dash-icon">📋</div><div class="dash-title">Visit Form</div><div class="dash-subtitle">Open entry form</div></div>
 <div class="dash-card" onclick="getLocationFromDashboard()"><div class="dash-icon">📍</div><div class="dash-title">GPS Check</div><div class="dash-subtitle">Check current location</div></div>
+<div class="dash-card" onclick="openVisitHistory()"><div class="dash-icon">🕒</div><div class="dash-title">Visit History</div><div class="dash-subtitle">Recent visits dekhein</div></div>
 <div class="dash-card" onclick="logout()"><div class="dash-icon">🚪</div><div class="dash-title">Logout</div><div class="dash-subtitle">Exit account</div></div>
 </div>
 <div class="info-box"><strong>Status</strong><div id="dashToday">Ready for visit entry</div></div>
+</div>
+
+<div id="historySection" style="display:none;">
+<h3>🕒 Visit History</h3>
+<div id="historyList" class="info-box">Loading...</div>
+<button type="button" class="secondary" onclick="openDashboard()">🏠 Back to Dashboard</button>
 </div>
 
 <div id="formSection" style="display:none;">
@@ -142,6 +150,7 @@ var MAX_RETRY=5;
 var settings={},loggedIn={},currentLat=null,currentLng=null,currentAddress="",currentAccuracy=null;
 var watermarkedPhotoBase64=null,selfiePhotoBase64=null,customerStream=null,selfieStream=null;
 var customerFacing="environment",selfieFacing="user";
+var lastVisitHistory=[];
 
 function callApi(payload){payload.secret=APP_SECRET;return fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)}).then(function(r){return r.json();});}
 function isYes(v){return v&&v.toString().trim().toUpperCase()==="YES";}
@@ -195,13 +204,47 @@ document.getElementById("infoEmpId").innerText=r.empId||"";
 document.getElementById("infoHQ").innerText=r.hq||"";
 document.getElementById("infoEmail").innerText=r.email||"";
 updateDashboardNetwork();
+loadVisitStats();
 }else s.innerText="❌ Employee ID nahi mila.";
 }).catch(function(){s.innerText="⚠️ Network nahi mila. Login ke liye internet chahiye.";});
 }
 
+function loadVisitStats(){
+var countEl=document.getElementById("todayVisitCount");
+callApi({action:"getVisitHistory",empId:loggedIn.empId}).then(function(r){
+if(r&&r.success){
+countEl.innerText=r.todayCount;
+lastVisitHistory=r.recent||[];
+renderHistoryList();
+}else{countEl.innerText="-";}
+}).catch(function(){countEl.innerText="-";});
+}
+
+function renderHistoryList(){
+var box=document.getElementById("historyList");
+if(!lastVisitHistory||!lastVisitHistory.length){box.innerHTML="Koi purani visit nahi mili.";return;}
+var html="";
+lastVisitHistory.forEach(function(v){
+html+="<div style='padding:8px 0;border-bottom:1px solid #e1e5eb'>";
+html+="<div style='font-weight:bold'>"+(v.firm||"-")+"</div>";
+html+="<div style='font-size:13px;color:#555'>"+(v.city||"-")+" | "+(v.contact||"-")+"</div>";
+html+="<div style='font-size:12px;color:#777'>"+(v.timestamp||"")+(v.travelFlag&&v.travelFlag!=="OK"?" | "+v.travelFlag:"")+"</div>";
+html+="</div>";
+});
+box.innerHTML=html;
+}
+
+function openVisitHistory(){
+document.getElementById("dashboardSection").style.display="none";
+document.getElementById("historySection").style.display="block";
+window.scrollTo({top:0,behavior:"smooth"});
+renderHistoryList();
+loadVisitStats();
+}
+
 function openNewVisit(){openVisitForm();setTimeout(function(){document.getElementById("visitCity").focus();},100);}
 function openVisitForm(){document.getElementById("dashboardSection").style.display="none";document.getElementById("formSection").style.display="block";window.scrollTo({top:0,behavior:"smooth"});}
-function openDashboard(){stopCamera("customer");stopCamera("selfie");document.getElementById("formSection").style.display="none";document.getElementById("dashboardSection").style.display="block";updateDashboardNetwork();window.scrollTo({top:0,behavior:"smooth"});}
+function openDashboard(){stopCamera("customer");stopCamera("selfie");document.getElementById("formSection").style.display="none";document.getElementById("historySection").style.display="none";document.getElementById("dashboardSection").style.display="block";updateDashboardNetwork();loadVisitStats();window.scrollTo({top:0,behavior:"smooth"});}
 function updateDashboardNetwork(){var e=document.getElementById("dashboardNetwork");if(e)e.innerText=navigator.onLine?"🟢 Internet Connected":"🔴 Offline";}
 window.addEventListener("online",function(){updateDashboardNetwork();trySync();});window.addEventListener("offline",updateDashboardNetwork);
 
@@ -254,7 +297,9 @@ preview.src=result;box.style.display="block";document.getElementById(sid).innerT
 function stopCamera(mode,switching){
 var stream=mode==="selfie"?selfieStream:customerStream;if(stream){stream.getTracks().forEach(function(t){t.stop();});if(mode==="selfie")selfieStream=null;else customerStream=null;}
 var v=mode==="selfie"?"selfieVideo":"cameraVideo",o=mode==="selfie"?"btnOpenSelfieCamera":"btnOpenCamera",c=mode==="selfie"?"btnCaptureSelfie":"btnCapture",sw=mode==="selfie"?"btnSwitchSelfieCamera":"btnSwitchCamera";
-document.getElementById(v).style.display="none";document.getElementById(c).style.display="none";document.getElementById(sw).style.display="none";
+var videoEl=document.getElementById(v);
+videoEl.pause();videoEl.srcObject=null;videoEl.removeAttribute("src");videoEl.load();
+videoEl.style.display="none";document.getElementById(c).style.display="none";document.getElementById(sw).style.display="none";
 if(!switching)document.getElementById(o).style.display="block";
 }
 function retakePhoto(mode){var b=mode==="selfie"?"selfiePreviewBox":"photoPreviewBox",s=mode==="selfie"?"selfieStatus":"photoStatus";document.getElementById(b).style.display="none";document.getElementById(s).innerText="";if(mode==="selfie")selfiePhotoBase64=null;else watermarkedPhotoBase64=null;checkEnableSubmit();startCamera(mode);}
@@ -288,7 +333,7 @@ b.disabled=true;s.innerText="Saving...";var payload=buildPayload();
 callApi(payload).then(function(r){
 if(r.status==="duplicate"){s.innerText="⚠️ Is customer ki entry aaj pehle se ho chuki hai.";b.disabled=false;return;}
 if(r.status==="error"){s.innerText="❌ "+r.message;b.disabled=false;return;}
-s.innerText="✅ Visit entry saved!"+(r.travelFlag&&r.travelFlag!=="OK"?" — "+r.travelFlag:"");resetFormAfterSubmit();
+s.innerText="✅ Visit entry saved!"+(r.travelFlag&&r.travelFlag!=="OK"?" — "+r.travelFlag:"");resetFormAfterSubmit();loadVisitStats();
 }).catch(function(){queueForOffline(payload);s.innerText="📴 Network nahi mila — entry offline save ho gayi.";b.disabled=false;resetFormAfterSubmit();});
 }
 
