@@ -3,9 +3,8 @@
   "short_name": "Market Visit",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#fff",
   "theme_color": "#4285f4",
-  "description": "Market Visit Entry and Field Visit Management App",
   "icons": [
     {
       "src": "icon-192.png",
