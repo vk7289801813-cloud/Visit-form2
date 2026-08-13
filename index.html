@@ -97,6 +97,7 @@ video{width:100%;border-radius:7px;display:none;background:#000}
 <label>Visited Customer Photo (Live Camera Only)</label>
 <video id="cameraVideo" playsinline autoplay muted></video>
 <button type="button" onclick="startCamera('customer')" id="btnOpenCamera">📷 Open Camera</button>
+<button type="button" onclick="switchCamera('customer')" id="btnSwitchCamera" style="display:none">🔄 Switch Front/Back</button>
 <button type="button" onclick="capturePhoto('customer')" id="btnCapture" style="display:none">📸 Capture Photo</button>
 <div class="photo-status" id="photoStatus"></div>
 <div id="photoPreviewBox" class="preview-box">
@@ -109,6 +110,7 @@ video{width:100%;border-radius:7px;display:none;background:#000}
 <label>Your Selfie (Live Camera Only)</label>
 <video id="selfieVideo" playsinline autoplay muted></video>
 <button type="button" onclick="startCamera('selfie')" id="btnOpenSelfieCamera">🤳 Open Selfie Camera</button>
+<button type="button" onclick="switchCamera('selfie')" id="btnSwitchSelfieCamera" style="display:none">🔄 Switch Front/Back</button>
 <button type="button" onclick="capturePhoto('selfie')" id="btnCaptureSelfie" style="display:none">📸 Capture Selfie</button>
 <div class="photo-status" id="selfieStatus"></div>
 <div id="selfiePreviewBox" class="preview-box">
@@ -134,11 +136,12 @@ video{width:100%;border-radius:7px;display:none;background:#000}
 <script>
 var APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbxsbRFDeJSeq9IOOvZHdnXNMvsLh69aRnOUzf6_gspxxWnQ9-aN9O1Omj70N8NOa7N8mg/exec";
 // Change this to a random string, and check the SAME value inside Code.gs before accepting any request.
-var APP_SECRET="1wsdsfccghvdf-szchsfcbkrdvb";
+var APP_SECRET="CHANGE_THIS_TO_A_RANDOM_SECRET";
 var PENDING_KEY="pm_pending_visits";
 var MAX_RETRY=5;
 var settings={},loggedIn={},currentLat=null,currentLng=null,currentAddress="",currentAccuracy=null;
 var watermarkedPhotoBase64=null,selfiePhotoBase64=null,customerStream=null,selfieStream=null;
+var customerFacing="environment",selfieFacing="user";
 
 function callApi(payload){payload.secret=APP_SECRET;return fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)}).then(function(r){return r.json();});}
 function isYes(v){return v&&v.toString().trim().toUpperCase()==="YES";}
@@ -212,11 +215,17 @@ document.getElementById("dashToday").innerText="✅ GPS OK | Accuracy: "+current
 }
 
 function startCamera(mode){
-var videoId=mode==="selfie"?"selfieVideo":"cameraVideo",openId=mode==="selfie"?"btnOpenSelfieCamera":"btnOpenCamera",capId=mode==="selfie"?"btnCaptureSelfie":"btnCapture",statusId=mode==="selfie"?"selfieStatus":"photoStatus",facing=mode==="selfie"?"user":"environment";
-navigator.mediaDevices.getUserMedia({video:{facingMode:facing},audio:false}).then(function(stream){
+var videoId=mode==="selfie"?"selfieVideo":"cameraVideo",openId=mode==="selfie"?"btnOpenSelfieCamera":"btnOpenCamera",capId=mode==="selfie"?"btnCaptureSelfie":"btnCapture",switchId=mode==="selfie"?"btnSwitchSelfieCamera":"btnSwitchCamera",statusId=mode==="selfie"?"selfieStatus":"photoStatus",facing=mode==="selfie"?selfieFacing:customerFacing;
+navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing}},audio:false}).then(function(stream){
 if(mode==="selfie")selfieStream=stream;else customerStream=stream;
-var v=document.getElementById(videoId);v.srcObject=stream;v.style.display="block";document.getElementById(openId).style.display="none";document.getElementById(capId).style.display="block";
+var v=document.getElementById(videoId);v.srcObject=stream;v.style.display="block";document.getElementById(openId).style.display="none";document.getElementById(capId).style.display="block";document.getElementById(switchId).style.display="block";
 }).catch(function(e){document.getElementById(statusId).innerText="Camera access error: "+e.message;});
+}
+
+function switchCamera(mode){
+if(mode==="selfie")selfieFacing=selfieFacing==="user"?"environment":"user";else customerFacing=customerFacing==="environment"?"user":"environment";
+stopCamera(mode,true);
+startCamera(mode);
 }
 
 function capturePhoto(mode){
@@ -225,8 +234,8 @@ if(mode==="customer"){
 s.innerText="Location fetch ho raha hai...";document.getElementById("btnSubmit").disabled=true;
 navigator.geolocation.getCurrentPosition(function(p){
 currentLat=p.coords.latitude.toFixed(6);currentLng=p.coords.longitude.toFixed(6);currentAccuracy=Math.round(p.coords.accuracy);
-var max=settings.max_gps_accuracy?parseFloat(settings.max_gps_accuracy):null;
-if(max&&currentAccuracy>max){s.innerText="⚠️ GPS accuracy kam hai ("+currentAccuracy+"m).";return;}
+var max=isYes(settings.gps_required)&&settings.max_gps_accuracy?parseFloat(settings.max_gps_accuracy):null;
+if(max&&currentAccuracy>max){s.innerText="⚠️ GPS accuracy kam hai ("+currentAccuracy+"m, chahiye ≤"+max+"m). Khuli jagah me try karein.";document.getElementById("btnSubmit").disabled=false;return;}
 fetch("https://nominatim.openstreetmap.org/reverse?format=json&lat="+currentLat+"&lon="+currentLng).then(function(r){return r.json();}).then(function(x){currentAddress=x.display_name||"N/A";drawWatermark("customer");}).catch(function(){currentAddress="N/A";drawWatermark("customer");});
 },function(e){s.innerText="Location error: "+e.message;},{enableHighAccuracy:true,timeout:10000});
 }else drawWatermark("selfie");
@@ -242,10 +251,11 @@ if(mode==="selfie")selfiePhotoBase64=result;else watermarkedPhotoBase64=result;
 preview.src=result;box.style.display="block";document.getElementById(sid).innerText="✅ Photo ready";stopCamera(mode);checkEnableSubmit();
 }
 
-function stopCamera(mode){
+function stopCamera(mode,switching){
 var stream=mode==="selfie"?selfieStream:customerStream;if(stream){stream.getTracks().forEach(function(t){t.stop();});if(mode==="selfie")selfieStream=null;else customerStream=null;}
-var v=mode==="selfie"?"selfieVideo":"cameraVideo",o=mode==="selfie"?"btnOpenSelfieCamera":"btnOpenCamera",c=mode==="selfie"?"btnCaptureSelfie":"btnCapture";
-document.getElementById(v).style.display="none";document.getElementById(c).style.display="none";document.getElementById(o).style.display="block";
+var v=mode==="selfie"?"selfieVideo":"cameraVideo",o=mode==="selfie"?"btnOpenSelfieCamera":"btnOpenCamera",c=mode==="selfie"?"btnCaptureSelfie":"btnCapture",sw=mode==="selfie"?"btnSwitchSelfieCamera":"btnSwitchCamera";
+document.getElementById(v).style.display="none";document.getElementById(c).style.display="none";document.getElementById(sw).style.display="none";
+if(!switching)document.getElementById(o).style.display="block";
 }
 function retakePhoto(mode){var b=mode==="selfie"?"selfiePreviewBox":"photoPreviewBox",s=mode==="selfie"?"selfieStatus":"photoStatus";document.getElementById(b).style.display="none";document.getElementById(s).innerText="";if(mode==="selfie")selfiePhotoBase64=null;else watermarkedPhotoBase64=null;checkEnableSubmit();startCamera(mode);}
 document.getElementById("declaration").addEventListener("change",checkEnableSubmit);
