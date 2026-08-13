@@ -46,8 +46,10 @@ video{width:100%;border-radius:7px;display:none;background:#000}
 
 <div id="loginSection">
 <h3 id="loginTitleText">Login</h3>
-<label>Employee ID</label>
+<label for="loginEmployee">Employee ID</label>
 <input type="text" id="loginEmployee" placeholder="EMP001" autocomplete="off">
+<label for="loginPin">PIN</label>
+<input type="password" id="loginPin" placeholder="4-6 digit PIN" inputmode="numeric" maxlength="6" autocomplete="off">
 <button type="button" onclick="checkLogin()">🔐 Login</button>
 <div id="loginStatus"></div>
 </div>
@@ -83,8 +85,8 @@ video{width:100%;border-radius:7px;display:none;background:#000}
 <input type="text" id="firmName" placeholder="Firm name">
 <label>Visited Customer Contact Person Name</label>
 <input type="text" id="contactPerson" placeholder="Contact person">
-<label>Visited Customer Area Pin Code</label>
-<input type="text" id="pinCode" placeholder="e.g. 201301" inputmode="numeric">
+<label for="pinCode">Visited Customer Area Pin Code</label>
+<input type="text" id="pinCode" placeholder="e.g. 201301" inputmode="numeric" maxlength="6" pattern="[0-9]{6}">
 
 <div id="remarksBlock">
 <label>Visit Remarks / Discussion Notes</label>
@@ -93,7 +95,7 @@ video{width:100%;border-radius:7px;display:none;background:#000}
 
 <div id="photoBlock">
 <label>Visited Customer Photo (Live Camera Only)</label>
-<video id="cameraVideo" playsinline autoplay></video>
+<video id="cameraVideo" playsinline autoplay muted></video>
 <button type="button" onclick="startCamera('customer')" id="btnOpenCamera">📷 Open Camera</button>
 <button type="button" onclick="capturePhoto('customer')" id="btnCapture" style="display:none">📸 Capture Photo</button>
 <div class="photo-status" id="photoStatus"></div>
@@ -105,7 +107,7 @@ video{width:100%;border-radius:7px;display:none;background:#000}
 
 <div id="selfieBlock">
 <label>Your Selfie (Live Camera Only)</label>
-<video id="selfieVideo" playsinline autoplay></video>
+<video id="selfieVideo" playsinline autoplay muted></video>
 <button type="button" onclick="startCamera('selfie')" id="btnOpenSelfieCamera">🤳 Open Selfie Camera</button>
 <button type="button" onclick="capturePhoto('selfie')" id="btnCaptureSelfie" style="display:none">📸 Capture Selfie</button>
 <div class="photo-status" id="selfieStatus"></div>
@@ -131,11 +133,14 @@ video{width:100%;border-radius:7px;display:none;background:#000}
 
 <script>
 var APPS_SCRIPT_URL="https://script.google.com/macros/s/AKfycbxsbRFDeJSeq9IOOvZHdnXNMvsLh69aRnOUzf6_gspxxWnQ9-aN9O1Omj70N8NOa7N8mg/exec";
+// Change this to a random string, and check the SAME value inside Code.gs before accepting any request.
+var APP_SECRET="CHANGE_THIS_TO_A_RANDOM_SECRET";
 var PENDING_KEY="pm_pending_visits";
+var MAX_RETRY=5;
 var settings={},loggedIn={},currentLat=null,currentLng=null,currentAddress="",currentAccuracy=null;
 var watermarkedPhotoBase64=null,selfiePhotoBase64=null,customerStream=null,selfieStream=null;
 
-function callApi(payload){return fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)}).then(function(r){return r.json();});}
+function callApi(payload){payload.secret=APP_SECRET;return fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)}).then(function(r){return r.json();});}
 function isYes(v){return v&&v.toString().trim().toUpperCase()==="YES";}
 
 function setImageWithFallback(id,fileId){
@@ -170,10 +175,11 @@ checkEnableSubmit();
 loadSettings();
 
 function checkLogin(){
-var empId=document.getElementById("loginEmployee").value.trim(),s=document.getElementById("loginStatus");
+var empId=document.getElementById("loginEmployee").value.trim(),pin=document.getElementById("loginPin").value.trim(),s=document.getElementById("loginStatus");
 if(!empId){s.innerText="Employee ID bharein";return;}
+if(!pin){s.innerText="PIN bharein";return;}
 s.innerText="Checking...";
-callApi({action:"verifyEmployee",empId:empId}).then(function(r){
+callApi({action:"verifyEmployee",empId:empId,pin:pin}).then(function(r){
 if(r.success){
 loggedIn=r;
 document.getElementById("loginSection").style.display="none";
@@ -228,9 +234,10 @@ fetch("https://nominatim.openstreetmap.org/reverse?format=json&lat="+currentLat+
 
 function drawWatermark(mode){
 var video=document.getElementById(mode==="selfie"?"selfieVideo":"cameraVideo"),preview=document.getElementById(mode==="selfie"?"selfiePreview":"photoPreview"),box=document.getElementById(mode==="selfie"?"selfiePreviewBox":"photoPreviewBox"),sid=document.getElementById(mode==="selfie"?"selfieStatus":"photoStatus"),c=document.getElementById("hiddenCanvas");
-c.width=video.videoWidth;c.height=video.videoHeight;var ctx=c.getContext("2d");ctx.drawImage(video,0,0,c.width,c.height);
+var MAX_W=1280,vw=video.videoWidth,vh=video.videoHeight,scale=vw>MAX_W?MAX_W/vw:1;
+c.width=Math.round(vw*scale);c.height=Math.round(vh*scale);var ctx=c.getContext("2d");ctx.drawImage(video,0,0,c.width,c.height);
 if(isYes(settings.watermark_required)){var f=Math.max(16,Math.floor(c.width/40)),bar=f*2.8;ctx.font=f+"px Arial";ctx.fillStyle="rgba(0,0,0,.55)";ctx.fillRect(0,c.height-bar,c.width,bar);ctx.fillStyle="#fff";ctx.fillText((loggedIn.name||"Employee")+" | "+new Date().toLocaleString(),10,c.height-bar+f);if(currentLat)ctx.fillText("Lat: "+currentLat+", Lng: "+currentLng,10,c.height-bar+f*2);}
-var result=c.toDataURL("image/jpeg",.85);
+var result=c.toDataURL("image/jpeg",.7);
 if(mode==="selfie")selfiePhotoBase64=result;else watermarkedPhotoBase64=result;
 preview.src=result;box.style.display="block";document.getElementById(sid).innerText="✅ Photo ready";stopCamera(mode);checkEnableSubmit();
 }
@@ -286,14 +293,31 @@ function getPendingQueue(){try{var r=localStorage.getItem(PENDING_KEY);return r?
 function setPendingQueue(q){try{localStorage.setItem(PENDING_KEY,JSON.stringify(q));}catch(e){}updatePendingBanner();}
 function queueForOffline(p){var q=getPendingQueue();q.push(p);setPendingQueue(q);}
 function updatePendingBanner(){var q=getPendingQueue(),b=document.getElementById("offlineBanner");if(q.length){document.getElementById("offlineText").innerText=q.length+" entries offline pending hain.";b.style.display="block";}else b.style.display="none";}
-function trySync(){var q=getPendingQueue();if(!q.length)return;var r=q.slice(),n=r.shift();callApi(n).then(function(){setPendingQueue(r);trySync();}).catch(function(){});}
+function trySync(){
+var q=getPendingQueue();if(!q.length)return;
+var r=q.slice(),n=r.shift();
+callApi(n).then(function(resp){
+if(resp&&resp.status==="error"){
+n._retries=(n._retries||0)+1;
+if(n._retries<MAX_RETRY){r.unshift(n);}
+// after MAX_RETRY failed attempts (bad/rejected data), drop it so queue isn't stuck forever
+setPendingQueue(r);
+}else{
+setPendingQueue(r);trySync();
+}
+}).catch(function(){
+// network error - leave item at front, retry later without counting against it
+n._retries=(n._retries||0);
+r.unshift(n);setPendingQueue(r);
+});
+}
 setInterval(trySync,30000);
 
 function titleCase(str){return str.replace(/\w\S*/g,function(t){return t.charAt(0).toUpperCase()+t.substr(1).toLowerCase();});}
 
 function logout(){
 loggedIn={};watermarkedPhotoBase64=null;selfiePhotoBase64=null;stopCamera("customer");stopCamera("selfie");
-document.getElementById("dashboardSection").style.display="none";document.getElementById("formSection").style.display="none";document.getElementById("loginSection").style.display="block";document.getElementById("loginEmployee").value="";document.getElementById("loginStatus").innerText="";
+document.getElementById("dashboardSection").style.display="none";document.getElementById("formSection").style.display="none";document.getElementById("loginSection").style.display="block";document.getElementById("loginEmployee").value="";document.getElementById("loginPin").value="";document.getElementById("loginStatus").innerText="";
 }
 </script>
 </body>
