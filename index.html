@@ -95,25 +95,12 @@
       }
     }
 
-    /* STEP 2 BOTTOM NAV + HISTORY */
-    #appNav{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(420px,100%);background:#fff;border-top:1px solid #ddd;box-shadow:0 -3px 12px rgba(0,0,0,.08);display:none;z-index:9999;padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
-    .nav-row{display:grid;grid-template-columns:repeat(4,1fr);gap:2px}
-    .nav-btn{border:0;background:transparent;color:#777;padding:7px 3px;margin:0;font-size:11px;line-height:1.15;border-radius:9px}
-    .nav-btn .nav-icon{display:block;font-size:22px;margin-bottom:3px}
-    .nav-btn.active{color:#4285f4;font-weight:bold;background:#eef4ff}
-    #appMain{padding-bottom:82px}
-    .history-card{background:#fff;border:1px solid #e2e6ec;border-radius:10px;padding:12px;margin:10px 0;box-shadow:0 2px 7px rgba(0,0,0,.04)}
-    .history-title{font-weight:bold;font-size:16px;margin-bottom:5px}
-    .history-line{font-size:13px;padding:2px 0;color:#444}
-    .history-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
-    .history-actions button{margin:0;font-size:13px;padding:8px}
-    .empty-history{text-align:center;color:#777;padding:30px 10px;background:#f7f9fc;border-radius:10px}
-    .profile-row{background:#f7f9fc;border-radius:8px;padding:11px;margin:8px 0}
-    .profile-label{font-size:12px;color:#777}.profile-value{font-weight:bold;margin-top:2px}
-  </style>
-</head>
-<body id="pageBody">
-<div class="bg-overlay">
+ #appNav{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(420px,100%);background:#fff;border-top:1px solid #ddd;box-shadow:0 -3px 12px rgba(0,0,0,.08);display:none;z-index:9999;padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+.nav-row{display:grid;grid-template-columns:repeat(4,1fr);gap:2px}
+.nav-btn{border:0;background:transparent;color:#777;padding:7px 3px;margin:0;font-size:11px;line-height:1.15;border-radius:9px}
+.nav-btn .nav-icon{display:block;font-size:22px;margin-bottom:3px}
+.nav-btn.active{color:#4285f4;font-weight:bold;background:#eef4ff}
+#appMain{padding-bottom:82px}
   <div id="appMain">
 
   <div id="offlineBanner">
