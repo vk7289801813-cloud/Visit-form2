@@ -172,6 +172,12 @@ video{width:100%;border-radius:11px;display:none;background:#000}
   100%{box-shadow:0 0 0 0 rgba(14,156,143,0)}
 }
 
+.dashboard-status.warn{background:var(--amber-soft);color:#7A551E;border-color:#F3DBB3}
+.dashboard-status.warn::before{background:var(--amber);animation:none;box-shadow:none}
+.dashboard-status.danger{background:var(--danger-soft);color:#8A2A2A;border-color:#F3C6C6}
+.dashboard-status.danger::before{background:var(--danger);animation:none;box-shadow:none}
+.dashboard-status.neutral::before{background:var(--slate);animation:none;box-shadow:none}
+
 @media(max-width:360px){.dashboard-grid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -207,6 +213,8 @@ video{width:100%;border-radius:11px;display:none;background:#000}
 <div><strong>Head Quarter:</strong> <span id="dashHQ"></span></div>
 </div>
 <div id="dashboardNetwork" class="dashboard-status">🌐 Checking connection...</div>
+<div class="dashboard-status" id="batteryStatusCard">🔋 Checking battery...</div>
+<div class="dashboard-status" id="dashPendingSync" style="display:none">🔄 Pending Sync: <span id="dashPendingCount">0</span></div>
 <div class="dashboard-status" id="todayVisitCard">📊 Aaj ki Visits: <span id="todayVisitCount">-</span></div>
 <div class="dashboard-grid">
 <div class="dash-card" onclick="openNewVisit()"><div class="dash-icon">📍</div><div class="dash-title">New Visit</div><div class="dash-subtitle">Customer visit entry</div></div>
@@ -231,6 +239,7 @@ video{width:100%;border-radius:11px;display:none;background:#000}
 <div id="hqRow"><strong>Head Quarter:</strong> <span id="infoHQ"></span></div>
 <div id="emailRow"><strong>Email:</strong> <span id="infoEmail"></span></div>
 </div>
+<div class="dashboard-status" id="visitTimerCard">⏱️ Visit Duration: <span id="visitTimerDisplay">00:00</span></div>
 
 <label>To Visit City / District / State</label>
 <input type="text" id="visitCity" placeholder="e.g. Noida, UP">
@@ -311,6 +320,8 @@ var watermarkedPhotoBase64=null,selfiePhotoBase64=null,customerStream=null,selfi
 var customerFacing="environment",selfieFacing="user";
 var lastVisitHistory=[];
 var customerTorchOn=false,selfieTorchOn=false;
+var batteryObj=null,visitStartTime=null,durationTimerInterval=null;
+var LAST_SYNC_KEY="pm_last_sync";
 
 function callApi(payload){payload.secret=APP_SECRET;return fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)}).then(function(r){return r.json();});}
 function isYes(v){return v&&v.toString().trim().toUpperCase()==="YES";}
@@ -345,6 +356,7 @@ checkEnableSubmit();
 }
 
 loadSettings();
+updatePendingBanner();
 
 function checkLogin(){
 var empId=document.getElementById("loginEmployee").value.trim(),pin=document.getElementById("loginPin").value.trim(),s=document.getElementById("loginStatus");
@@ -364,6 +376,7 @@ document.getElementById("infoEmpId").innerText=r.empId||"";
 document.getElementById("infoHQ").innerText=r.hq||"";
 document.getElementById("infoEmail").innerText=r.email||"";
 updateDashboardNetwork();
+initBatteryMonitor();
 loadVisitStats();
 }else s.innerText="❌ Employee ID nahi mila.";
 }).catch(function(){s.innerText="⚠️ Network nahi mila. Login ke liye internet chahiye.";});
@@ -403,10 +416,63 @@ loadVisitStats();
 }
 
 function openNewVisit(){openVisitForm();setTimeout(function(){document.getElementById("visitCity").focus();},100);}
-function openVisitForm(){document.getElementById("dashboardSection").style.display="none";document.getElementById("formSection").style.display="block";window.scrollTo({top:0,behavior:"smooth"});}
+function openVisitForm(){document.getElementById("dashboardSection").style.display="none";document.getElementById("formSection").style.display="block";window.scrollTo({top:0,behavior:"smooth"});startVisitTimer();}
 function openDashboard(){stopCamera("customer");stopCamera("selfie");document.getElementById("formSection").style.display="none";document.getElementById("historySection").style.display="none";document.getElementById("dashboardSection").style.display="block";updateDashboardNetwork();loadVisitStats();window.scrollTo({top:0,behavior:"smooth"});}
-function updateDashboardNetwork(){var e=document.getElementById("dashboardNetwork");if(e)e.innerText=navigator.onLine?"🟢 Internet Connected":"🔴 Offline";}
+function updateDashboardNetwork(){
+var e=document.getElementById("dashboardNetwork");if(!e)return;
+if(navigator.onLine){e.innerText="🟢 Internet Connected";e.className="dashboard-status";}
+else{e.innerText="🔴 Offline — data local save hogi";e.className="dashboard-status danger";}
+}
 window.addEventListener("online",function(){updateDashboardNetwork();trySync();});window.addEventListener("offline",updateDashboardNetwork);
+
+/* ---- Battery status ---- */
+function initBatteryMonitor(){
+var card=document.getElementById("batteryStatusCard");
+if(!card)return;
+if(navigator.getBattery){
+navigator.getBattery().then(function(bat){
+batteryObj=bat;
+updateBatteryDisplay();
+bat.addEventListener("levelchange",updateBatteryDisplay);
+bat.addEventListener("chargingchange",updateBatteryDisplay);
+}).catch(function(){card.innerText="🔋 Battery info unavailable";card.className="dashboard-status neutral";});
+}else{
+card.innerText="🔋 Battery info is phone/browser par uplabdh nahi";card.className="dashboard-status neutral";
+}
+}
+function updateBatteryDisplay(){
+var card=document.getElementById("batteryStatusCard");if(!card||!batteryObj)return;
+var pct=Math.round(batteryObj.level*100),charging=batteryObj.charging;
+var icon=charging?"🔌":(pct<=20?"🪫":"🔋");
+card.innerText=icon+" Battery: "+pct+"%"+(charging?" (Charging)":"");
+if(pct<=15&&!charging)card.className="dashboard-status danger";
+else if(pct<=30&&!charging)card.className="dashboard-status warn";
+else card.className="dashboard-status";
+}
+
+/* ---- Visit duration timer ---- */
+function startVisitTimer(){
+if(visitStartTime)return; // already running, don't reset on repeat opens
+visitStartTime=Date.now();
+if(durationTimerInterval)clearInterval(durationTimerInterval);
+durationTimerInterval=setInterval(updateVisitTimerDisplay,1000);
+updateVisitTimerDisplay();
+}
+function updateVisitTimerDisplay(){
+var el=document.getElementById("visitTimerDisplay");if(!el||!visitStartTime)return;
+el.innerText=formatDuration(Math.floor((Date.now()-visitStartTime)/1000));
+}
+function stopVisitTimer(){
+if(durationTimerInterval){clearInterval(durationTimerInterval);durationTimerInterval=null;}
+}
+function getVisitDurationSeconds(){
+return visitStartTime?Math.floor((Date.now()-visitStartTime)/1000):0;
+}
+function formatDuration(totalSeconds){
+var h=Math.floor(totalSeconds/3600),m=Math.floor((totalSeconds%3600)/60),s=totalSeconds%60;
+function pad(n){return n<10?"0"+n:""+n;}
+return h>0?(pad(h)+":"+pad(m)+":"+pad(s)):(pad(m)+":"+pad(s));
+}
 
 function getLocationFromDashboard(){
 if(!navigator.geolocation){alert("GPS supported nahi hai.");return;}
@@ -455,6 +521,37 @@ stopCamera(mode,true);
 startCamera(mode);
 }
 
+function fetchWithTimeout(url,ms){
+return Promise.race([
+fetch(url,{headers:{"Accept":"application/json"}}),
+new Promise(function(_,rej){setTimeout(function(){rej(new Error("timeout"));},ms);})
+]);
+}
+
+function reverseGeocode(lat,lng){
+if(!navigator.onLine){
+return Promise.resolve("Lat "+lat+", Lng "+lng+" (offline — address baad me sync hote waqt add karein)");
+}
+return fetchWithTimeout("https://nominatim.openstreetmap.org/reverse?format=json&lat="+lat+"&lon="+lng+"&addressdetails=1",7000)
+.then(function(r){return r.json();})
+.then(function(x){return (x&&x.display_name)?x.display_name:Promise.reject(new Error("empty"));})
+.catch(function(){
+return fetchWithTimeout("https://api.bigdatacloud.net/data/reverse-geocode-client?latitude="+lat+"&longitude="+lng+"&localityLanguage=en",7000)
+.then(function(r){return r.json();})
+.then(function(x){
+if(!x)return Promise.reject(new Error("empty"));
+var parts=[x.locality,x.city||x.principalSubdivision,x.principalSubdivision!==x.city?x.principalSubdivision:null,x.countryName].filter(function(v,i,a){return v&&a.indexOf(v)===i;});
+return parts.length?parts.join(", "):Promise.reject(new Error("empty"));
+});
+})
+.catch(function(){
+return fetchWithTimeout("https://nominatim.openstreetmap.org/reverse?format=json&lat="+lat+"&lon="+lng,7000)
+.then(function(r){return r.json();})
+.then(function(x){return (x&&x.display_name)?x.display_name:Promise.reject(new Error("empty"));});
+})
+.catch(function(){return "Lat "+lat+", Lng "+lng+" (address lookup failed)";});
+}
+
 function capturePhoto(mode){
 var statusId=mode==="selfie"?"selfieStatus":"photoStatus",s=document.getElementById(statusId);
 triggerShutterFlash();
@@ -464,7 +561,8 @@ navigator.geolocation.getCurrentPosition(function(p){
 currentLat=p.coords.latitude.toFixed(6);currentLng=p.coords.longitude.toFixed(6);currentAccuracy=Math.round(p.coords.accuracy);
 var max=isYes(settings.gps_required)&&settings.max_gps_accuracy?parseFloat(settings.max_gps_accuracy):null;
 if(max&&currentAccuracy>max){s.innerText="⚠️ GPS accuracy kam hai ("+currentAccuracy+"m, chahiye ≤"+max+"m). Khuli jagah me try karein.";document.getElementById("btnSubmit").disabled=false;return;}
-fetch("https://nominatim.openstreetmap.org/reverse?format=json&lat="+currentLat+"&lon="+currentLng).then(function(r){return r.json();}).then(function(x){currentAddress=x.display_name||"N/A";drawWatermark("customer");}).catch(function(){currentAddress="N/A";drawWatermark("customer");});
+s.innerText="Address fetch ho raha hai...";
+reverseGeocode(currentLat,currentLng).then(function(addr){currentAddress=addr;drawWatermark("customer");});
 },function(e){s.innerText="Location error: "+e.message;},{enableHighAccuracy:true,timeout:10000});
 }else drawWatermark("selfie");
 }
@@ -538,6 +636,7 @@ document.getElementById("btnSubmit").disabled=!(p&&s&&d);
 }
 
 function buildPayload(){
+var durSec=getVisitDurationSeconds();
 return{action:"saveVisit",data:{
 empId:loggedIn.empId,empName:loggedIn.name,hq:loggedIn.hq,email:loggedIn.email,
 visitCity:titleCase(document.getElementById("visitCity").value.trim()),
@@ -547,6 +646,8 @@ declaration:isYes(settings.declaration)?"Yes":"N/A",
 pinCode:document.getElementById("pinCode").value.trim(),
 lat:currentLat,lng:currentLng,accuracy:currentAccuracy,address:currentAddress,
 remarks:document.getElementById("remarks").value.trim(),
+visitDurationSeconds:durSec,visitDuration:formatDuration(durSec),
+batteryLevel:batteryObj?Math.round(batteryObj.level*100):null,
 photoBase64:watermarkedPhotoBase64,selfieBase64:selfiePhotoBase64}};
 }
 
@@ -570,12 +671,23 @@ document.getElementById("declaration").checked=false;
 document.getElementById("photoPreviewBox").style.display="none";document.getElementById("selfiePreviewBox").style.display="none";
 watermarkedPhotoBase64=null;selfiePhotoBase64=null;checkEnableSubmit();
 stopCamera("customer");stopCamera("selfie");
+stopVisitTimer();visitStartTime=null;
+var tEl=document.getElementById("visitTimerDisplay");if(tEl)tEl.innerText="00:00";
 }
 
 function getPendingQueue(){try{var r=localStorage.getItem(PENDING_KEY);return r?JSON.parse(r):[];}catch(e){return[];}}
 function setPendingQueue(q){try{localStorage.setItem(PENDING_KEY,JSON.stringify(q));}catch(e){}updatePendingBanner();}
 function queueForOffline(p){var q=getPendingQueue();q.push(p);setPendingQueue(q);}
-function updatePendingBanner(){var q=getPendingQueue(),b=document.getElementById("offlineBanner");if(q.length){document.getElementById("offlineText").innerText=q.length+" entries offline pending hain.";b.style.display="block";}else b.style.display="none";}
+function updatePendingBanner(){
+var q=getPendingQueue(),b=document.getElementById("offlineBanner");
+if(q.length){document.getElementById("offlineText").innerText=q.length+" entries offline pending hain.";b.style.display="block";}
+else b.style.display="none";
+var dEl=document.getElementById("dashPendingSync"),cEl=document.getElementById("dashPendingCount");
+if(dEl&&cEl){
+if(q.length){cEl.innerText=q.length;dEl.style.display="flex";dEl.className="dashboard-status warn";}
+else{dEl.style.display="none";}
+}
+}
 function trySync(){
 var q=getPendingQueue();if(!q.length)return;
 var r=q.slice(),n=r.shift();
@@ -586,6 +698,7 @@ if(n._retries<MAX_RETRY){r.unshift(n);}
 // after MAX_RETRY failed attempts (bad/rejected data), drop it so queue isn't stuck forever
 setPendingQueue(r);
 }else{
+try{localStorage.setItem(LAST_SYNC_KEY,String(Date.now()));}catch(e){}
 setPendingQueue(r);trySync();
 }
 }).catch(function(){
@@ -595,11 +708,14 @@ r.unshift(n);setPendingQueue(r);
 });
 }
 setInterval(trySync,30000);
+// retry sooner right after regaining connectivity, and once more shortly after (handles flaky reconnects)
+window.addEventListener("online",function(){setTimeout(trySync,1500);});
 
 function titleCase(str){return str.replace(/\w\S*/g,function(t){return t.charAt(0).toUpperCase()+t.substr(1).toLowerCase();});}
 
 function logout(){
 loggedIn={};watermarkedPhotoBase64=null;selfiePhotoBase64=null;stopCamera("customer");stopCamera("selfie");
+stopVisitTimer();visitStartTime=null;batteryObj=null;
 document.getElementById("dashboardSection").style.display="none";document.getElementById("formSection").style.display="none";document.getElementById("loginSection").style.display="block";document.getElementById("loginEmployee").value="";document.getElementById("loginPin").value="";document.getElementById("loginStatus").innerText="";
 }
 </script>
